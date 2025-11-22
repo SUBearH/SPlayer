@@ -121,7 +121,7 @@ const settingStore = useSettingStore();
 //当前音乐音质
 
 const currentQuality = computed(() => {
-  return musicStore.playSong.quality || "未知音质";
+  return musicStore.playSong.quality || "音质";
 });
 
 // 当前歌词模式

@@ -3,25 +3,55 @@ import { useDataStore, useMusicStore, useSettingStore, useStatusStore } from "@/
 import type { SongType } from "@/types/main";
 import { isElectron } from "../env";
 import { getCoverColorData } from "../color";
+import { songLevelData } from "../meta";
+import { findKey } from "lodash-es";
 
 /**
- * 根据songUrl请求的level参数，获取对应的音质显示名称
- * @param level 设置的音质等级参数
+ * 获取实际可用的音质显示名称
+ * @param settingLevel 设置的音质等级 (来自 settingStore.songLevel)
+ * @param qualityData songQuality API 返回的音质数据 (键为 "l", "m", "h", "sq", "hr", "je", "sk", "db", "jm")
  * @returns 音质显示名称
  */
-const getQualityNameByLevel = (level: string): string => {
-  const levelMap: Record<string, string> = {
-    standard: "标准",
-    higher: "较高",
-    exhigh: "HQ",
-    lossless: "SQ",
-    hires: "Hi-Res",
-    jyeffect: "环绕声",
-    sky: "沉浸音质",
-    dolby: "Dolby",
-    jymaster: "母带",
-  };
-  return levelMap[level] || "未知";
+const getActualQualityName = (settingLevel: string, qualityData?: Record<string, any>): string => {
+  // 从 meta.ts 的 songLevelData 中获取设置等级对应的键
+  const settingLevelKey = findKey(songLevelData, { level: settingLevel });
+  if (!settingLevelKey) {
+    return "未知音质";
+  }
+
+  // 若无音质数据，返回未知音质
+  if (!qualityData) {
+    return "未知音质";
+  }
+
+  // 音质等级优先级顺序（从低到高）
+  const qualityKeyOrder = Object.keys(songLevelData) as Array<keyof typeof songLevelData>;
+
+  // 获取设置等级在顺序中的位置
+  const settingKeyIndex = qualityKeyOrder.indexOf(settingLevelKey as keyof typeof songLevelData);
+
+  if (settingKeyIndex === -1) {
+    return songLevelData[settingLevelKey as keyof typeof songLevelData].name;
+  }
+
+  // 第一步：优先查找设置等级及以下的最高可用音质
+  for (let i = settingKeyIndex; i >= 0; i--) {
+    const key = qualityKeyOrder[i];
+    if (qualityData[key]) {
+      return songLevelData[key].name;
+    }
+  }
+
+  // 第二步：若设置等级及以下都不支持，取设置等级以上歌曲支持的最低音质
+  for (let i = settingKeyIndex + 1; i < qualityKeyOrder.length; i++) {
+    const key = qualityKeyOrder[i];
+    if (qualityData[key]) {
+      return songLevelData[key].name;
+    }
+  }
+
+  // 都找不到则返回设置等级的显示名称
+  return songLevelData[settingLevelKey as keyof typeof songLevelData].name;
 };
 
 /**
@@ -80,15 +110,21 @@ export const getOnlineUrl = async (
   // 是否仅能试听
   const isTrial = songData?.freeTrialInfo !== null;
 
-  // 获取音质等级信息 - 异步获取songQuality数据以确定实际音质
-  let quality: string | undefined = getQualityNameByLevel(settingStore.songLevel);
+  // 获取音质等级信息 - 异步获取songQuality数据以确定实际可用的音质
+  let quality: string | undefined;
   try {
     const qualityRes = await songQuality(id);
     if (qualityRes?.data) {
-      quality = getQualityNameByLevel(settingStore.songLevel);
+      // 根据实际可用的音质数据确定显示的音质
+      quality = getActualQualityName(settingStore.songLevel, qualityRes.data);
+    } else {
+      // 若无法获取音质详情，使用未知音质兜底
+      quality = "未知音质";
     }
   } catch (err) {
     console.warn(`获取${id}的音质详情失败:`, err);
+    // 异常处理：使用未知音质兜底
+    quality = "未知音质";
   }
 
   // 返回歌曲地址
