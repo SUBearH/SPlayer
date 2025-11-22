@@ -149,9 +149,10 @@ watch(
   }
 );
 
-// 根据音质等级获取对应的样式类
+// 根据音质等级SQ Hires Dolby-Atmos获取对应的特别样式类
 const getQualityClass = (quality: string | undefined): string => {
   if (!quality) return "";
+  if (quality === "SQ") return "quality-sq";
   if (quality === "Hi-Res") return "quality-hires";
   if (quality === "Dolby Atmos") return "quality-dolby";
   return "";
@@ -279,16 +280,23 @@ const jumpPage = debounce(
       border: 1px solid rgba(var(--main-color), 0.6);
       transition: all 0.3s ease;
 
-      &.quality-hires {
-        background: linear-gradient(135deg, rgba(255, 127, 0, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%);
-        border: 1px solid rgba(255, 127, 0, 0.8);
+      &.quality-sq {
+        border: 1px solid rgba(255, 127, 0, 0.6);
         color: rgb(255, 127, 0);
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        box-shadow: 0 0 8px rgba(255, 127, 0, 0.3), inset 0 0 8px rgba(255, 127, 0, 0.1);
+        opacity: 0.8;
+      }
+
+      &.quality-hires {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 180, 0, 0.2) 100%);
+        border: 1.5px solid rgba(255, 215, 0, 0.9);
+        color: rgb(255, 215, 0);
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.15);
+        text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
 
         &:hover {
-          box-shadow: 0 0 16px rgba(255, 127, 0, 0.5), inset 0 0 12px rgba(255, 127, 0, 0.15);
+          box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2);
         }
       }
 
