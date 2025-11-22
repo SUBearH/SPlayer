@@ -31,14 +31,6 @@ export const setGlobalColor = (name: string, colorValue: string): void => {
   // 检查变量是否已经存在
   const existingValue = getComputedStyle(root).getPropertyValue(name).trim();
   if (existingValue === colorValue) return;
-
-  // 添加过渡效果
-  if (!root.style.transition.includes("color-mix")) {
-    // 仅首次设置过渡
-    const currentTransition = root.style.transition || "";
-    root.style.transition = `${currentTransition ? currentTransition + ", " : ""}color 0.3s ease-in-out`;
-  }
-
   // 设置变量
   root.style.setProperty(name, colorValue);
 };
