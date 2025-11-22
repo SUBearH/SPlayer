@@ -112,6 +112,11 @@ const router = useRouter();
 const musicStore = useMusicStore();
 const statusStore = useStatusStore();
 const settingStore = useSettingStore();
+//当前音乐音质
+
+const currentQuality = computed(() => {
+  return musicStore.playSong.quality || "未知音质";
+});
 
 // 当前歌词模式
 const lyricMode = computed(() => {
