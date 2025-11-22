@@ -48,7 +48,7 @@ export type SongType = {
   path?: string;
   pc?: boolean;
   size?: number;
-  quality?: "Hi-Res" | "HQ" | "SQ";
+  quality?: "Hi-Res" | "HQ" | "SQ" | string;
   createTime?: number;
   updateTime?: number;
   playCount?: number;
@@ -68,7 +68,6 @@ export type CoverType = {
   count?: number;
   tags?: string[];
   userId?: number | null;
-  count?: number;
   privacy?: number;
   playCount?: number;
   liked?: boolean;
@@ -76,7 +75,6 @@ export type CoverType = {
   commentCount?: number;
   shareCount?: number;
   subCount?: number;
-  playCount?: number;
   createTime?: number;
   updateTime?: number;
   loading?: boolean;

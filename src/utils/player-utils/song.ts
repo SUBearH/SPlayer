@@ -1,8 +1,28 @@
-import { songUrl, unlockSongUrl } from "@/api/song";
+import { songUrl, unlockSongUrl, songQuality } from "@/api/song";
 import { useDataStore, useMusicStore, useSettingStore, useStatusStore } from "@/stores";
 import type { SongType } from "@/types/main";
 import { isElectron } from "../env";
 import { getCoverColorData } from "../color";
+
+/**
+ * 根据songUrl请求的level参数，获取对应的音质显示名称
+ * @param level 设置的音质等级参数
+ * @returns 音质显示名称
+ */
+const getQualityNameByLevel = (level: string): string => {
+  const levelMap: Record<string, string> = {
+    standard: "标准",
+    higher: "较高",
+    exhigh: "HQ",
+    lossless: "SQ",
+    hires: "Hi-Res",
+    jyeffect: "环绕声",
+    sky: "沉浸音质",
+    dolby: "Dolby",
+    jymaster: "母带",
+  };
+  return levelMap[level] || "未知";
+};
 
 /**
  * 获取当前播放歌曲
@@ -46,11 +66,11 @@ export const getPlayerInfo = (song?: SongType, sep: string = "/"): string | null
 /**
  * 获取在线播放链接
  * @param id 歌曲id
- * @returns { url, isTrial } 播放链接与是否为试听
+ * @returns { url, isTrial, quality } 播放链接、是否为试听、音质等级
  */
 export const getOnlineUrl = async (
   id: number,
-): Promise<{ url: string | null; isTrial: boolean }> => {
+): Promise<{ url: string | null; isTrial: boolean; quality?: string }> => {
   const settingStore = useSettingStore();
   const res = await songUrl(id, settingStore.songLevel);
   console.log(`🌐 ${id} music data:`, res);
@@ -59,6 +79,18 @@ export const getOnlineUrl = async (
   if (!songData || !songData?.url) return { url: null, isTrial: false };
   // 是否仅能试听
   const isTrial = songData?.freeTrialInfo !== null;
+
+  // 获取音质等级信息 - 异步获取songQuality数据以确定实际音质
+  let quality: string | undefined = getQualityNameByLevel(settingStore.songLevel);
+  try {
+    const qualityRes = await songQuality(id);
+    if (qualityRes?.data) {
+      quality = getQualityNameByLevel(settingStore.songLevel);
+    }
+  } catch (err) {
+    console.warn(`获取${id}的音质详情失败:`, err);
+  }
+
   // 返回歌曲地址
   // 客户端直接返回，网页端转 https, 并转换url以便解决音乐链接cors问题
   const normalizedUrl = isElectron
@@ -69,8 +101,8 @@ export const getOnlineUrl = async (
         .replace(/m704\.music\.126\.net/g, "m701.music.126.net");
   // 若为试听且未开启试听播放，则将 url 置为空，仅标记为试听
   const finalUrl = isTrial && !settingStore.playSongDemo ? null : normalizedUrl;
-  console.log(`🎧 ${id} music url:`, finalUrl);
-  return { url: finalUrl, isTrial };
+  console.log(`🎧 ${id} music url:`, finalUrl, `quality:`, quality);
+  return { url: finalUrl, isTrial, quality };
 };
 
 /**
