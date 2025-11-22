@@ -43,7 +43,7 @@
             </n-ellipsis>
             <!-- 音质 -->
             <n-tag
-              v-if="song?.quality"
+              v-if="song?.path && song?.quality"
               :bordered="false"
               :type="song.quality === 'Hi-Res' ? 'warning' : 'info'"
               class="quality"
