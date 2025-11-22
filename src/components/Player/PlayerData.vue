@@ -39,6 +39,12 @@
         size="small"
         align="center"
       >
+        <!-- 音质等级 -->
+        <span
+        class="meta-item"
+        :type="musicStore.playSong.quality === 'Hi-Res' ? 'warning' : 'info'">
+          {{ currentQuality }}
+        </span>
         <!-- 歌词模式 -->
         <span class="meta-item">{{ lyricMode }}</span>
         <!-- 是否在线 -->
