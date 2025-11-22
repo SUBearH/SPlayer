@@ -37,12 +37,7 @@ const config: Configuration = {
       // 安装版
       {
         target: "nsis",
-        arch: ["x64", "arm64"],
-      },
-      // 打包版
-      {
-        target: "portable",
-        arch: ["x64", "arm64"],
+        arch: ["x64"],
       },
     ],
   },
