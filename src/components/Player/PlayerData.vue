@@ -39,12 +39,6 @@
         size="small"
         align="center"
       >
-        <!-- 音质等级 -->
-        <span
-          :class="['meta-item', getQualityClass(musicStore.playSong.quality)]"
-          :type="musicStore.playSong.quality === 'Hi-Res' ? 'warning' : 'info'">
-          {{ currentQuality }}
-        </span>
         <!-- 歌词模式 -->
         <span class="meta-item">{{ lyricMode }}</span>
         <!-- 是否在线 -->
@@ -118,45 +112,6 @@ const router = useRouter();
 const musicStore = useMusicStore();
 const statusStore = useStatusStore();
 const settingStore = useSettingStore();
-
-// 加载过程中显示缓存上一首歌曲的音质
-const cachedQuality = ref<string>("");
-// 标记当前歌曲是否加载完成
-const qualityLoadingComplete = ref(true);
-
-// 优先显示当前歌曲的音质，加载中显示缓存，加载失败显示"未知音质"
-const currentQuality = computed(() => {
-  const quality = musicStore.playSong.quality;
-  if (quality) {
-    cachedQuality.value = quality;
-    qualityLoadingComplete.value = true;
-    return quality;
-  }
-  if (qualityLoadingComplete.value) {
-    qualityLoadingComplete.value = false;
-  }
-  return cachedQuality.value || "未知音质";
-});
-
-// 监听歌曲变化，重置加载状态
-watch(
-  () => musicStore.playSong.id,
-  () => {
-    // 新歌曲切换时，重置加载状态标记（但保留缓存）
-    if (!musicStore.playSong.quality) {
-      qualityLoadingComplete.value = false;
-    }
-  }
-);
-
-// 根据音质等级SQ Hires Dolby-Atmos获取对应的特别样式类
-const getQualityClass = (quality: string | undefined): string => {
-  if (!quality) return "";
-  if (quality === "SQ") return "quality-sq";
-  if (quality === "Hi-Res") return "quality-hires";
-  if (quality === "Dolby Atmos") return "quality-dolby";
-  return "";
-};
 
 // 当前歌词模式
 const lyricMode = computed(() => {
@@ -278,40 +233,6 @@ const jumpPage = debounce(
       border-radius: 8px;
       padding: 2px 6px;
       border: 1px solid rgba(var(--main-color), 0.6);
-      transition: all 0.3s ease;
-
-      &.quality-sq {
-        border: 1px solid rgba(255, 127, 0, 0.6);
-        color: rgb(255, 127, 0);
-        opacity: 0.8;
-      }
-
-      &.quality-hires {
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 180, 0, 0.2) 100%);
-        border: 1.5px solid rgba(255, 215, 0, 0.9);
-        color: rgb(255, 215, 0);
-        font-weight: 700;
-        letter-spacing: 0.8px;
-        box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.15);
-        text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
-
-        &:hover {
-          box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2);
-        }
-      }
-
-      &.quality-dolby {
-        background: linear-gradient(135deg, rgba(100, 150, 255, 0.15) 0%, rgba(150, 100, 255, 0.15) 100%);
-        border: 1px solid rgba(100, 150, 255, 0.8);
-        color: rgb(100, 150, 255);
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        box-shadow: 0 0 12px rgba(100, 150, 255, 0.3), inset 0 0 8px rgba(100, 150, 255, 0.1);
-
-        &:hover {
-          box-shadow: 0 0 20px rgba(100, 150, 255, 0.5), inset 0 0 12px rgba(100, 150, 255, 0.15);
-        }
-      }
     }
   }
   &.record {

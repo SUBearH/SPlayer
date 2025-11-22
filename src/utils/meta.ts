@@ -14,11 +14,11 @@ export const songLevelData = {
   },
   h: {
     level: "exhigh",
-    name: "HQ",
+    name: "极高音质",
   },
   sq: {
     level: "lossless",
-    name: "SQ",
+    name: "无损音质",
   },
   hr: {
     level: "hires",
@@ -34,7 +34,7 @@ export const songLevelData = {
   },
   db: {
     level: "dolby",
-    name: "Dolby Atmos",
+    name: "杜比全景声",
   },
   jm: {
     level: "jymaster",

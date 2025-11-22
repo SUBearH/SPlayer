@@ -80,7 +80,7 @@ class Player {
   /** 其他数据 */
   private message: MessageReactive | null = null;
   /** 预载下一首歌曲播放地址缓存（仅存 URL，不创建 Howl） */
-  private nextPrefetch: { id: number; url: string | null; ublock: boolean; quality?: string } | null = null;
+  private nextPrefetch: { id: number; url: string | null; ublock: boolean } | null = null;
   /** 当前曲目重试信息（按歌曲维度计数） */
   private retryInfo: { songId: number; count: number } = { songId: 0, count: 0 };
   constructor() {
@@ -142,7 +142,6 @@ class Player {
           id: Number(songId || nextSong.id),
           url: `file://${nextSong.path}`,
           ublock: false,
-          quality: nextSong.quality,
         };
         return;
       }
@@ -155,24 +154,24 @@ class Player {
       }
       const canUnlock = isElectron && nextSong.type !== "radio" && settingStore.useSongUnlock;
       // 先请求官方地址
-      const { url: officialUrl, isTrial, quality } = await getOnlineUrl(songId);
+      const { url: officialUrl, isTrial } = await getOnlineUrl(songId);
       if (officialUrl && !isTrial) {
         // 官方可播放且非试听
-        this.nextPrefetch = { id: songId, url: officialUrl, ublock: false, quality };
+        this.nextPrefetch = { id: songId, url: officialUrl, ublock: false };
       } else if (canUnlock) {
         // 官方失败或为试听时尝试解锁
         const unlockUrl = await getUnlockSongUrl(nextSong);
         if (unlockUrl) {
-          this.nextPrefetch = { id: songId, url: unlockUrl, ublock: true, quality };
+          this.nextPrefetch = { id: songId, url: unlockUrl, ublock: true };
         } else if (officialUrl) {
           // 解锁失败，若官方为试听且允许试听，保留官方试听地址
-          this.nextPrefetch = { id: songId, url: officialUrl, ublock: false, quality };
+          this.nextPrefetch = { id: songId, url: officialUrl, ublock: false };
         } else {
           this.nextPrefetch = { id: songId, url: null, ublock: false };
         }
       } else {
         // 不可解锁，仅保留官方结果（可能为空）
-        this.nextPrefetch = { id: songId, url: officialUrl, ublock: false, quality };
+        this.nextPrefetch = { id: songId, url: officialUrl, ublock: false };
       }
     } catch (error) {
       console.error("Error prefetching next song url:", error);
@@ -591,18 +590,9 @@ class Player {
           if (cached && cached.id === songId && cached.url) {
             playerUrl = cached.url;
             statusStore.playUblock = cached.ublock;
-            // 更新 playSong 的 quality 字段
-            if (cached.quality) {
-              musicStore.playSong.quality = cached.quality;
-            }
           } else {
             const canUnlock = isElectron && type !== "radio" && settingStore.useSongUnlock;
-            const { url: officialUrl, isTrial, quality } = await getOnlineUrl(songId);
-
-            // 更新 playSong 的 quality 字段
-            if (quality) {
-              musicStore.playSong.quality = quality;
-            }
+            const { url: officialUrl, isTrial } = await getOnlineUrl(songId);
 
             if (officialUrl && !isTrial) {
               playerUrl = officialUrl;
