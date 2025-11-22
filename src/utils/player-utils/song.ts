@@ -1,8 +1,52 @@
-import { songUrl, unlockSongUrl } from "@/api/song";
+import { songUrl, unlockSongUrl, songQuality } from "@/api/song";
 import { useDataStore, useMusicStore, useSettingStore, useStatusStore } from "@/stores";
 import type { SongType } from "@/types/main";
 import { isElectron } from "../env";
 import { getCoverColorData } from "../color";
+import { songLevelData } from "../meta";
+import { findKey } from "lodash-es";
+
+/**
+ * 获取音质等级
+ * @param settingLevel 设置的音质等级
+ * @param qualityData songQuality返回的音质数据
+ * @returns 音质等级
+ */
+const getActualQualityName = (settingLevel: string, qualityData?: Record<string, any>): string => {
+  // 从songLevelData获取设置音质等级对应的键
+  const settingLevelKey = findKey(songLevelData, { level: settingLevel });
+  if (!settingLevelKey) {
+    return "未知音质";
+  }
+
+  // 若无数据
+  if (!qualityData) {
+    return "未知音质";
+  }
+
+  // 排序音质等级优先级
+  const qualityKeyOrder = Object.keys(songLevelData) as Array<keyof typeof songLevelData>;
+  const settingKeyIndex = qualityKeyOrder.indexOf(settingLevelKey as keyof typeof songLevelData);
+
+  if (settingKeyIndex === -1) {
+    return songLevelData[settingLevelKey as keyof typeof songLevelData].name;
+  }
+
+  // 获取最终要显示的音质等级
+  for (let i = settingKeyIndex; i >= 0; i--) {
+    const key = qualityKeyOrder[i];
+    if (qualityData[key]) {
+      return songLevelData[key].name;
+    }
+  }
+  for (let i = settingKeyIndex + 1; i < qualityKeyOrder.length; i++) {
+    const key = qualityKeyOrder[i];
+    if (qualityData[key]) {
+      return songLevelData[key].name;
+    }
+  }
+  return songLevelData[settingLevelKey as keyof typeof songLevelData].name;
+};
 
 /**
  * 获取当前播放歌曲
@@ -46,11 +90,11 @@ export const getPlayerInfo = (song?: SongType, sep: string = "/"): string | null
 /**
  * 获取在线播放链接
  * @param id 歌曲id
- * @returns { url, isTrial } 播放链接与是否为试听
+ * @returns { url, isTrial, quality } 播放链接、是否为试听、音质等级
  */
 export const getOnlineUrl = async (
   id: number,
-): Promise<{ url: string | null; isTrial: boolean }> => {
+): Promise<{ url: string | null; isTrial: boolean; quality?: string }> => {
   const settingStore = useSettingStore();
   const res = await songUrl(id, settingStore.songLevel);
   console.log(`🌐 ${id} music data:`, res);
@@ -59,6 +103,24 @@ export const getOnlineUrl = async (
   if (!songData || !songData?.url) return { url: null, isTrial: false };
   // 是否仅能试听
   const isTrial = songData?.freeTrialInfo !== null;
+
+  // 获取songQuality数据以确定歌曲最高音质
+  let quality: string | undefined;
+  try {
+    const qualityRes = await songQuality(id);
+    if (qualityRes?.data) {
+      // 根据数据确定显示的音质
+      quality = getActualQualityName(settingStore.songLevel, qualityRes.data);
+    } else {
+      // 若无法获取音质详情
+      quality = "未知音质";
+    }
+  } catch (err) {
+    console.warn(`获取${id}的音质详情失败:`, err);
+    // 异常处理
+    quality = "未知音质";
+  }
+
   // 返回歌曲地址
   // 客户端直接返回，网页端转 https, 并转换url以便解决音乐链接cors问题
   const normalizedUrl = isElectron
@@ -69,8 +131,8 @@ export const getOnlineUrl = async (
         .replace(/m704\.music\.126\.net/g, "m701.music.126.net");
   // 若为试听且未开启试听播放，则将 url 置为空，仅标记为试听
   const finalUrl = isTrial && !settingStore.playSongDemo ? null : normalizedUrl;
-  console.log(`🎧 ${id} music url:`, finalUrl);
-  return { url: finalUrl, isTrial };
+  console.log(`🎧 ${id} music url:`, finalUrl, `quality:`, quality);
+  return { url: finalUrl, isTrial, quality };
 };
 
 /**
