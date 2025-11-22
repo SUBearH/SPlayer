@@ -119,27 +119,22 @@ const musicStore = useMusicStore();
 const statusStore = useStatusStore();
 const settingStore = useSettingStore();
 
-// 缓存上一首歌曲的音质，用于加载过程中的显示
+// 加载过程中显示缓存上一首歌曲的音质
 const cachedQuality = ref<string>("");
 // 标记当前歌曲是否加载完成
 const qualityLoadingComplete = ref(true);
 
-// 当前音乐音质 - 优先显示已加载的质量，加载中显示缓存，加载失败显示"未知音质"
+// 优先显示当前歌曲的音质，加载中显示缓存，加载失败显示"未知音质"
 const currentQuality = computed(() => {
   const quality = musicStore.playSong.quality;
-
-  // 已有音质信息则直接显示
   if (quality) {
     cachedQuality.value = quality;
     qualityLoadingComplete.value = true;
     return quality;
   }
-
-  // 无音质信息：加载中则显示缓存的上一首质量，或显示"未知音质"
   if (qualityLoadingComplete.value) {
     qualityLoadingComplete.value = false;
   }
-
   return cachedQuality.value || "未知音质";
 });
 

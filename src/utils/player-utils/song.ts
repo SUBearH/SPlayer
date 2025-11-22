@@ -7,13 +7,13 @@ import { songLevelData } from "../meta";
 import { findKey } from "lodash-es";
 
 /**
- * 获取音质显示名称
+ * 获取音质等级
  * @param settingLevel 设置的音质等级
  * @param qualityData songQuality返回的音质数据
- * @returns 音质显示名称
+ * @returns 音质等级
  */
 const getActualQualityName = (settingLevel: string, qualityData?: Record<string, any>): string => {
-  // 从songLevelData获取设置等级对应的键
+  // 从songLevelData获取设置音质等级对应的键
   const settingLevelKey = findKey(songLevelData, { level: settingLevel });
   if (!settingLevelKey) {
     return "未知音质";
@@ -24,7 +24,7 @@ const getActualQualityName = (settingLevel: string, qualityData?: Record<string,
     return "未知音质";
   }
 
-  // 获取音质等级优先级顺序
+  // 排序音质等级优先级
   const qualityKeyOrder = Object.keys(songLevelData) as Array<keyof typeof songLevelData>;
   const settingKeyIndex = qualityKeyOrder.indexOf(settingLevelKey as keyof typeof songLevelData);
 
@@ -32,7 +32,7 @@ const getActualQualityName = (settingLevel: string, qualityData?: Record<string,
     return songLevelData[settingLevelKey as keyof typeof songLevelData].name;
   }
 
-  // 获取最终的音质名称
+  // 获取最终要显示的音质等级
   for (let i = settingKeyIndex; i >= 0; i--) {
     const key = qualityKeyOrder[i];
     if (qualityData[key]) {
@@ -104,7 +104,7 @@ export const getOnlineUrl = async (
   // 是否仅能试听
   const isTrial = songData?.freeTrialInfo !== null;
 
-  // 获取音质等级信息 获取songQuality数据以确定实际可用的音质
+  // 获取songQuality数据以确定歌曲最高音质
   let quality: string | undefined;
   try {
     const qualityRes = await songQuality(id);
