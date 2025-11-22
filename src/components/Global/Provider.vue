@@ -55,6 +55,8 @@ const themeOverrides = shallowRef<GlobalThemeOverrides>({});
 const toRGBA = (rgb: string, alpha: number) => `rgba(${rgb}, ${alpha})`;
 // 主题缓存键
 let lastThemeCacheKey: string | null = null;
+// 主题过渡标记
+let isThemeTransitioning = false;
 
 // 获取明暗模式
 const theme = computed(() => {
@@ -97,6 +99,20 @@ const changeGlobalTheme = () => {
     const themeCacheKey = `${themeModeLabel}|${settingStore.themeGlobalColor ? 1 : 0}|${settingStore.globalFont}|${colorSchemes.primary}|${colorSchemes.background}|${colorSchemes["surface-container"]}`;
     if (lastThemeCacheKey === themeCacheKey) return;
     lastThemeCacheKey = themeCacheKey;
+
+    // 启用过渡效果
+    if (!isThemeTransitioning) {
+      isThemeTransitioning = true;
+      const root = document.documentElement;
+      const originalTransition = root.style.transition;
+      root.style.transition = "background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)";
+
+      // 过渡完成后移除 transition
+      setTimeout(() => {
+        root.style.transition = originalTransition;
+        isThemeTransitioning = false;
+      }, 350);
+    }
 
     // 关键颜色
     const primaryRGB = colorSchemes.primary as string;

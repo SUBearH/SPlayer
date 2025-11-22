@@ -561,8 +561,14 @@ class Player {
       }
       const { id, dj, path, type } = playSongData;
 
-      // 更改当前播放歌曲
+      // 保存前一首歌曲的音质信息
+      const previousQuality = musicStore.playSong?.quality;
+
+      // 更改当前播放歌曲（保留上一首的音质，直到新音质加载完成）
       musicStore.playSong = playSongData;
+      if (previousQuality && !playSongData.quality) {
+        musicStore.playSong.quality = previousQuality;
+      }
       statusStore.playLoading = true;
 
       // 清理旧播放器与计时器
