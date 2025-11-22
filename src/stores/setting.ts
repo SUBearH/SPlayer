@@ -178,6 +178,12 @@ export interface SettingState {
   showDefaultLocalPath: boolean;
   /** 展示当前歌曲歌词状态信息 */
   showPlayMeta: boolean;
+  /** 显示歌曲音质 */
+  showSongQuality: boolean;
+  /** 显示歌曲特权标签 */
+  showSongPrivilegeTag: boolean;
+  /** 显示原唱翻唱标签 */
+  showSongOriginalTag: boolean;
 }
 
 export const useSettingStore = defineStore("setting", {
@@ -264,6 +270,9 @@ export const useSettingStore = defineStore("setting", {
     useRealIP: false,
     realIP: "",
     showPlayMeta: false,
+    showSongQuality: true,
+    showSongPrivilegeTag: true,
+    showSongOriginalTag: true,
   }),
   getters: {
     /**

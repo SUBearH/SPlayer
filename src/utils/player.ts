@@ -1,11 +1,11 @@
-import type { SongType, PlayModeType } from "@/types/main";
+import { SongType, PlayModeType } from "@/types/main";
 import type { MessageReactive } from "naive-ui";
 import { Howl, Howler } from "howler";
 import { cloneDeep } from "lodash-es";
 import { useMusicStore, useStatusStore, useDataStore, useSettingStore } from "@/stores";
 import { useIntervalFn } from "@vueuse/core";
 import { calculateProgress } from "./time";
-import { shuffleArray, runIdle } from "./helper";
+import { shuffleArray, runIdle, handleSongQuality } from "./helper";
 import { heartRateList } from "@/api/playlist";
 import { formatSongsList } from "./format";
 import { isLogin } from "./auth";
@@ -17,12 +17,14 @@ import {
   getPlayerInfo,
   getPlaySongData,
   getUnlockSongUrl,
+  getNextSongUrl,
 } from "./player-utils/song";
 import { isDev, isElectron } from "./env";
 // import { getLyricData } from "./player-utils/lyric";
 import audioContextManager from "@/utils/player-utils/context";
 import lyricManager from "./lyricManager";
 import blob from "./blob";
+import { IFormat } from "music-metadata";
 
 /* *允许播放格式 */
 const allowPlayFormat = ["mp3", "flac", "webm", "ogg", "wav"];
@@ -221,7 +223,7 @@ class Player {
     // 开发模式
     if (isDev) window.player = this.player;
     // 预载下一首播放地址
-    this.prefetchNextSongUrl();
+    this.nextPrefetch = await getNextSongUrl();
   }
   /**
    * 播放器事件
@@ -508,14 +510,9 @@ class Player {
         path,
       );
       // 更新音质
-      //statusStore.songQuality = handleSongQuality(infoData.format.bitrate ?? 0);
+      musicStore.playSong.quality = handleSongQuality(infoData.format.bitrate ?? 0);
       // 获取主色
       runIdle(() => getCoverColor(musicStore.playSong.cover));
-      // 获取歌词数据
-      // const { lyric, format } = await window.electron.ipcRenderer.invoke("get-music-lyric", path);
-      // parseLocalLyric(lyric, format);
-      // 更新媒体会话
-      this.updateMediaSession();
     } catch (error) {
       window.$message.error("获取本地歌曲元信息失败");
       console.error("Failed to parse local music info:", error);

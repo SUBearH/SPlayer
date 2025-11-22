@@ -20,6 +20,20 @@ export type CoverSize = {
   xl: string;
 };
 
+/** 音质 */
+export enum QualityType {
+  /** Hi-Res */
+  HiRes = "Hi-Res", // hr
+  /** 无损 */
+  SQ = "SQ", // sq / flac
+  /** 高质量 */
+  HQ = "HQ", // h: 320kbps
+  /** 中质量 */
+  MQ = "MQ", // m: 192kbps
+  /** 低质量 */
+  LQ = "LQ", // l: 128kbps
+}
+
 export type UserType = {
   id: number;
   name: string;
@@ -239,14 +253,14 @@ export type UpdateLogType = {
 };
 
 // 文件信息
-interface FileInfoType {
+export interface FileInfoType {
   url: string;
   sha512: string;
   size: number;
 }
 
 // 更新信息
-interface UpdateInfoType {
+export interface UpdateInfoType {
   tag: string;
   version: string;
   files: FileInfoType[];
