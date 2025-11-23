@@ -295,8 +295,8 @@ const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) =
     loading.value = false;
     return;
   }
-  // 如果已登录且歌曲数量少于 800，直接加载所有歌曲
-  if (isLogin() === 1 && (playlistDetailData.value?.count as number) < 800) {
+  // 如果已登录且歌曲数量少于 1500，直接加载所有歌曲
+  if (isLogin() === 1 && (playlistDetailData.value?.count as number) < 1500) {
     const ids: number[] = detail.privileges.map((song: any) => song.id as number);
     const result = await songDetail(ids);
     // 直接批量详情返回时也进行一次按 id 去重
@@ -332,7 +332,7 @@ const getPlaylistAllSongs = async (
   loadingMsgShow(!refresh);
   // 循环获取
   let offset: number = 0;
-  const limit: number = 500;
+  const limit: number = 1000;
   const listData: SongType[] = [];
   do {
     const result = await playlistAllSongs(id, limit, offset);
