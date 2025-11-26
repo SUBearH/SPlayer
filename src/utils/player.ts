@@ -488,6 +488,7 @@ class Player {
   private async parseLocalMusicInfo(path: string) {
     try {
       const musicStore = useMusicStore();
+      const statusStore = useStatusStore();
       // 获取封面数据
       const coverData = await window.electron.ipcRenderer.invoke("get-music-cover", path);
       if (coverData) {
@@ -499,6 +500,15 @@ class Player {
       } else {
         musicStore.playSong.cover = "/images/song.jpg?assest";
       }
+      // 更新媒体会话
+      this.updateMediaSession();
+      // 获取元数据
+      const infoData: { format: IFormat } = await window.electron.ipcRenderer.invoke(
+        "get-music-metadata",
+        path,
+      );
+      // 更新音质
+      //statusStore.songQuality = handleSongQuality(infoData.format.bitrate ?? 0);
       // 获取主色
       runIdle(() => getCoverColor(musicStore.playSong.cover));
       // 获取歌词数据

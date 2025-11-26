@@ -1,6 +1,5 @@
 import { app, BrowserWindow } from "electron";
 import { electronApp } from "@electron-toolkit/utils";
-import { release, type } from "os";
 import { isMac } from "./utils/config";
 import { unregisterShortcuts } from "./shortcut";
 import { initTray, MainTray } from "./tray";
@@ -27,8 +26,6 @@ class MainProcess {
     processLog.info("🚀 Main process startup");
     // 程序单例锁
     initSingleLock();
-    // 禁用 Windows 7 的 GPU 加速功能
-    if (release().startsWith("6.1") && type() == "Windows_NT") app.disableHardwareAcceleration();
     // 监听应用事件
     this.handleAppEvents();
     // Electron 初始化完成后
