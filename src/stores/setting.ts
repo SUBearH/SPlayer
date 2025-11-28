@@ -182,6 +182,28 @@ export interface SettingState {
   showSongPrivilegeTag: boolean;
   /** 显示原唱翻唱标签 */
   showSongOriginalTag: boolean;
+  /** 隐藏发现音乐 */
+  hideDiscover: boolean;
+  /** 隐藏私人漫游 */
+  hidePersonalFM: boolean;
+  /** 隐藏播客电台 */
+  hideRadioHot: boolean;
+  /** 隐藏我的收藏 */
+  hideLike: boolean;
+  /** 隐藏我的云盘 */
+  hideCloud: boolean;
+  /** 隐藏本地歌曲 */
+  hideLocal: boolean;
+  /** 隐藏最近播放 */
+  hideHistory: boolean;
+  /** 隐藏创建的歌单 */
+  hideUserPlaylists: boolean;
+  /** 隐藏收藏的歌单 */
+  hideLikedPlaylists: boolean;
+  /** 隐藏心动模式 */
+  hideHeartbeatMode: boolean;
+  /** 启用搜索关键词获取 */
+  enableSearchKeyword: boolean;
 }
 
 export const useSettingStore = defineStore("setting", {
@@ -270,6 +292,17 @@ export const useSettingStore = defineStore("setting", {
     showSongQuality: true,
     showSongPrivilegeTag: true,
     showSongOriginalTag: true,
+    hideDiscover: false,
+    hidePersonalFM: false,
+    hideRadioHot: false,
+    hideLike: false,
+    hideCloud: false,
+    hideLocal: false,
+    hideHistory: false,
+    hideUserPlaylists: false,
+    hideLikedPlaylists: false,
+    hideHeartbeatMode: false,
+    enableSearchKeyword: true,
   }),
   getters: {
     /**
