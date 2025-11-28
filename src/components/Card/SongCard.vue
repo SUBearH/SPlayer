@@ -41,13 +41,12 @@
             >
               {{ song?.name || "未知曲目" }}
             </n-ellipsis>
-            <!-- 音质 -->
             <!-- 音质标签 -->
             <n-tag
               v-if="song?.quality && settingStore.showSongQuality"
               :bordered="false"
               :type="song.quality === QualityType.SQ ? 'warning' : qualityColor"
-              :class="['quality', `quality-${song.quality?.toLowerCase()}`]"
+              :class="['quality', song.quality?.includes('Dolby') ? 'quality-dolby' : `quality-${song.quality?.toLowerCase()}`]"
               round
             >
               {{ song.quality }}
@@ -191,9 +190,11 @@ const song = toRef(props, "song");
 
 // 音质颜色
 const qualityColor = computed(() => {
-  if (song.value.quality === QualityType.HiRes) return "warning";
-  if (song.value.quality === QualityType.SQ) return "warning";
-  if (song.value.quality === QualityType.HQ) return "info";
+  const quality = song.value.quality;
+  // 处理字符串和枚举两种情况
+  if (quality === QualityType.HiRes || quality === "Hi-Res") return "warning";
+  if (quality === QualityType.SQ || quality === "SQ") return "warning";
+  if (quality === QualityType.HQ || quality === "HQ") return "info";
   return "primary";
 });
 
@@ -347,6 +348,12 @@ const localCover = async (show: boolean) => {
           &.quality-lq {
             border-color: rgba(128, 128, 128, 0.4) !important;
             color: rgb(128, 128, 128) !important;
+          }
+
+          // Dolby 样式 - 蓝紫色
+          &.quality-dolby {
+            border-color: rgba(100, 150, 255, 0.4) !important;
+            color: rgb(100, 150, 255) !important;
           }
         }
         .cloud {
