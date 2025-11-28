@@ -106,6 +106,7 @@
 import type { RouteLocationRaw } from "vue-router";
 import { useMusicStore, useStatusStore, useSettingStore } from "@/stores";
 import { debounce, isObject } from "lodash-es";
+import { getCachedQuality, setCachedQuality } from "@/utils/qualityCache";
 
 defineProps<{
   center?: boolean;
@@ -120,34 +121,49 @@ const statusStore = useStatusStore();
 const settingStore = useSettingStore();
 
 // 标记当前歌曲ID
-const currentSongId = ref<number>();
-// 缓存当前歌曲的质量，切换歌曲时保持显示，直到新歌曲质量加载完成
-const cachedQuality = ref<string>("");
+const currentSongId = ref<number | undefined>(musicStore.playSong.id);
+// 缓存当前歌曲的质量
+const cachedQuality = ref<string>(musicStore.playSong.quality || "");
 
 // 当前歌曲质量显示值
 const currentQuality = computed(() => {
+  const quality = musicStore.playSong.quality;
+  const songId = musicStore.playSong.id;
+
+  // 如果当前歌曲有质量数据
+  if (quality && songId === currentSongId.value) {
+    // 更新缓存
+    cachedQuality.value = quality;
+    setCachedQuality(songId, quality);
+    return quality;
+  }
+
+  // 如果当前歌曲ID改变（切换了歌曲）
+  if (songId !== currentSongId.value) {
+    currentSongId.value = songId;
+    // 尝试从全局缓存中获取新歌曲的质量
+    const cachedValue = getCachedQuality(songId);
+    if (cachedValue) {
+      cachedQuality.value = cachedValue;
+      return cachedValue;
+    }
+  }
+
+  // 返回缓存值（无新数据时保持旧值，直到新歌曲质量加载完成）
   return cachedQuality.value;
 });
 
-// 监听歌曲ID变化，新歌曲切换时重置加载标记
+// 监听歌曲ID变化
 watch(
   () => musicStore.playSong.id,
   (newId) => {
-    // 如果ID真的改变了，标记新歌曲
+    // 如果ID改变，尝试从缓存中立即获取新歌曲的质量
     if (newId !== currentSongId.value) {
-      currentSongId.value = newId;
-    }
-  }
-);
-
-// 监听歌曲质量变化，只有当质量属于当前歌曲时才更新显示
-watch(
-  () => musicStore.playSong.quality,
-  (quality) => {
-    // 只有当质量数据对应当前歌曲ID时才更新缓存
-    // 确保不会被中间歌曲的质量加载所影响
-    if (quality && musicStore.playSong.id === currentSongId.value) {
-      cachedQuality.value = quality;
+      const cachedValue = getCachedQuality(newId);
+      if (cachedValue) {
+        currentSongId.value = newId;
+        cachedQuality.value = cachedValue;
+      }
     }
   }
 );

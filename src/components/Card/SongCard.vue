@@ -43,13 +43,13 @@
             </n-ellipsis>
             <!-- 音质标签 -->
             <n-tag
-              v-if="song?.quality && settingStore.showSongQuality"
+              v-if="displayQuality && settingStore.showSongQuality"
               :bordered="false"
-              :type="song.quality === QualityType.SQ ? 'warning' : qualityColor"
-              :class="['quality', song.quality?.includes('Dolby') ? 'quality-dolby' : `quality-${song.quality?.toLowerCase()}`]"
+              :type="displayQuality === QualityType.SQ ? 'warning' : qualityColor"
+              :class="['quality', displayQuality?.includes('Dolby') ? 'quality-dolby' : `quality-${displayQuality?.toLowerCase()}`]"
               round
             >
-              {{ song.quality }}
+              {{ displayQuality }}
             </n-tag>
             <!-- 原唱翻唱 -->
             <template>
@@ -166,6 +166,7 @@ import { formatTimestamp, msToTime } from "@/utils/time";
 import { usePlayer } from "@/utils/player";
 import { isElectron } from "@/utils/env";
 import blob from "@/utils/blob";
+import { getCachedQuality, setCachedQuality } from "@/utils/qualityCache";
 
 const props = defineProps<{
   // 歌曲
@@ -188,9 +189,45 @@ const settingStore = useSettingStore();
 // 歌曲数据
 const song = toRef(props, "song");
 
+// 缓存当前歌曲的质量
+const cachedQuality = ref<string>(song.value.quality || "");
+
+// 当前歌曲质量显示值（带缓存机制）
+const displayQuality = computed(() => {
+  const quality = song.value.quality;
+  const playSongId = musicStore.playSong.id;
+  const currentSongId = song.value.id;
+
+  // 如果当前卡片是播放中的歌曲，使用播放页的标签
+  if (playSongId === currentSongId && musicStore.playSong.quality) {
+    cachedQuality.value = musicStore.playSong.quality;
+    setCachedQuality(currentSongId, musicStore.playSong.quality);
+    return musicStore.playSong.quality;
+  }
+
+  // 如果有新质量数据且与缓存不同，更新缓存和全局缓存
+  if (quality && quality !== cachedQuality.value) {
+    cachedQuality.value = quality;
+    setCachedQuality(currentSongId, quality);
+    return quality;
+  }
+
+  // 如果本地缓存为空，尝试从全局缓存中获取
+  if (!cachedQuality.value) {
+    const globalCached = getCachedQuality(currentSongId);
+    if (globalCached) {
+      cachedQuality.value = globalCached;
+      return globalCached;
+    }
+  }
+
+  // 返回缓存的质量
+  return cachedQuality.value;
+});
+
 // 音质颜色
 const qualityColor = computed(() => {
-  const quality = song.value.quality;
+  const quality = displayQuality.value;
   // 处理字符串和枚举两种情况
   if (quality === QualityType.HiRes || quality === "Hi-Res") return "warning";
   if (quality === QualityType.SQ || quality === "SQ") return "warning";
