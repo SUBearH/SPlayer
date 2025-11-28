@@ -341,8 +341,22 @@ const getPlaylistData = async (
     return;
   }
 
-  // 默认只获取200首，fullUpdate为true时获取全部
-  const limitCount = fullUpdate ? (playlistDetailData.value.count || 0) : Math.min(200, playlistDetailData.value.count || 0);
+  // 检查是否存在缓存
+  const hasCachedData = getCachedLikedSongs().length > 0;
+
+  // 确定加载数量：
+  // - fullUpdate为true：加载全部
+  // - 存在缓存且非首次刷新：加载200首
+  // - 无缓存（首次加载）：加载全部
+  let limitCount: number;
+  if (fullUpdate) {
+    limitCount = playlistDetailData.value.count || 0;
+  } else if (hasCachedData) {
+    limitCount = Math.min(200, playlistDetailData.value.count || 0);
+  } else {
+    // 没有缓存时全量加载
+    limitCount = playlistDetailData.value.count || 0;
+  }
 
   // 仅在刷新模式下才清空缓存重新加载，增量模式下保留已有缓存
   if (refresh) {
