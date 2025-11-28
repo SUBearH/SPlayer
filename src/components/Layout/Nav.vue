@@ -91,10 +91,9 @@
 <script setup lang="ts">
 import type { DropdownOption } from "naive-ui";
 import { useSettingStore } from "@/stores";
-import { openLink, renderIcon } from "@/utils/helper";
+import { renderIcon } from "@/utils/helper";
 import { openSetting } from "@/utils/modal";
 import { isDev, isElectron } from "@/utils/env";
-import packageJson from "@/../package.json";
 
 const router = useRouter();
 const settingStore = useSettingStore();

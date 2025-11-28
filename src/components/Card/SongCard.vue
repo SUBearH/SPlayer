@@ -322,12 +322,41 @@ const localCover = async (show: boolean) => {
           cursor: pointer;
           margin-right: 6px;
           pointer-events: none;
+
           &:last-child {
             margin-right: 0;
           }
         }
         .quality {
           font-size: 10px;
+          font-weight: 500;
+          padding: 2px 8px !important;
+
+          // Hi-Res 特殊样式
+          &:has(+ *:contains("Hi-Res")),
+          :deep([class*="type-warning"]) {
+            background-color: rgba(255, 215, 0, 0.15) !important;
+            color: rgb(255, 215, 0) !important;
+          }
+
+          // SQ 无损样式
+          &:has(+ *:contains("SQ")) {
+            background-color: rgba(255, 127, 0, 0.12) !important;
+            color: rgb(255, 127, 0) !important;
+          }
+
+          // HQ 高质量样式
+          &:has(+ *:contains("HQ")) {
+            background-color: rgba(100, 200, 255, 0.12) !important;
+            color: rgb(100, 180, 255) !important;
+          }
+
+          // 默认/低质样式
+          &:has(+ *:contains("MQ")),
+          &:has(+ *:contains("LQ")) {
+            background-color: rgba(128, 128, 128, 0.08) !important;
+            color: rgb(128, 128, 128) !important;
+          }
         }
         .cloud {
           padding: 0 10px;
