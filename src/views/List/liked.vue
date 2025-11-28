@@ -83,8 +83,7 @@
             <n-flex class="left" align="flex-end">
               <n-button
                 :focusable="false"
-                :disabled="loading"
-                :loading="loading"
+                :disabled="loading && !hasInitialCache"
                 type="primary"
                 strong
                 secondary
@@ -95,11 +94,27 @@
                   <SvgIcon name="Play" />
                 </template>
                 {{
-                  loading
-                    ? `正在更新... (${playlistData.length}/${playlistDetailData?.count || "?"})`
+                  loading && !hasInitialCache
+                    ? `加载中... (${playlistData.length}/${playlistDetailData?.count || "?"})`
                     : "播放"
                 }}
               </n-button>
+              <!-- 正在更新状态指示 -->
+              <Transition :name="`router-${settingStore.routeAnimation}`">
+                <n-flex
+                  v-if="loading && hasInitialCache"
+                  align="center"
+                  :style="{
+                    padding: '6px 16px',
+                    borderRadius: '16px',
+                    backgroundColor: 'var(--n-color-target)',
+                    border: '1px solid rgba(var(--primary), 0.3)',
+                  }"
+                >
+                  <n-spin :size="18" />
+                  <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
+                </n-flex>
+              </Transition>
               <!-- 更多 -->
               <n-dropdown :options="moreOptions" trigger="click" placement="bottom-start">
                 <n-button :focusable="false" class="more" circle strong secondary>
@@ -170,7 +185,7 @@ import { formatCoverList, formatSongsList } from "@/utils/format";
 import { coverLoaded, formatNumber, fuzzySearch, renderIcon } from "@/utils/helper";
 import { renderToolbar } from "@/utils/meta";
 import { debounce, isObject, uniqBy } from "lodash-es";
-import { useDataStore, useStatusStore } from "@/stores";
+import { useDataStore, useStatusStore, useSettingStore } from "@/stores";
 import { openBatchList, openDescModal, openUpdatePlaylist } from "@/utils/modal";
 import { formatTimestamp } from "@/utils/time";
 import { isLogin, updateUserLikePlaylist } from "@/utils/auth";
@@ -188,6 +203,7 @@ const router = useRouter();
 const player = usePlayer();
 const dataStore = useDataStore();
 const statusStore = useStatusStore();
+const settingStore = useSettingStore();
 
 // 是否激活
 const isActivated = ref<boolean>(false);
@@ -206,6 +222,9 @@ const playlistId = computed<number>(() => dataStore.userLikeData.playlists?.[0]?
 // 加载提示
 const loading = ref<boolean>(true);
 const loadingMsg = ref<MessageReactive | null>(null);
+
+// 是否存在初始缓存（用于区分首次加载和后续更新）
+const hasInitialCache = ref<boolean>(false);
 
 // 列表是否滚动
 const listScrolling = ref<boolean>(false);
@@ -294,6 +313,10 @@ const resetPlaylistData = (getList: boolean) => {
 const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) => {
   // 加载缓存
   loadLikedCache();
+  // 检查是否存在初始缓存
+  const cachedSongs = getCachedLikedSongs();
+  hasInitialCache.value = cachedSongs.length > 0;
+
   // 获取歌单详情
   const detail = await playlistDetail(id);
   playlistDetailData.value = formatCoverList(detail.playlist)[0];

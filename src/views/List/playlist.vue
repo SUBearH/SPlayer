@@ -100,8 +100,7 @@
             <n-flex class="left" align="flex-end">
               <n-button
                 :focusable="false"
-                :disabled="loading"
-                :loading="loading"
+                :disabled="loading && !isSamePlaylist"
                 type="primary"
                 strong
                 secondary
@@ -112,15 +111,29 @@
                   <SvgIcon name="Play" />
                 </template>
                 {{
-                  loading
-                    ? isSamePlaylist
-                      ? "更新中..."
-                      : `加载中... (${
-                          playlistData.length === playlistDetailData.count ? 0 : playlistData.length
-                        }/${playlistDetailData.count})`
+                  loading && !isSamePlaylist
+                    ? `加载中... (${
+                        playlistData.length === playlistDetailData.count ? 0 : playlistData.length
+                      }/${playlistDetailData.count})`
                     : "播放"
                 }}
               </n-button>
+              <!-- 正在更新状态指示 -->
+              <Transition :name="`router-${settingStore.routeAnimation}`">
+                <n-flex
+                  v-if="loading && isSamePlaylist"
+                  align="center"
+                  :style="{
+                    padding: '6px 16px',
+                    borderRadius: '16px',
+                    backgroundColor: 'var(--n-color-target)',
+                    border: '1px solid rgba(var(--primary), 0.3)',
+                  }"
+                >
+                  <n-spin :size="18" />
+                  <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
+                </n-flex>
+              </Transition>
               <n-button
                 v-if="isUserPlaylist"
                 :focusable="false"
@@ -223,7 +236,7 @@ import { coverLoaded, formatNumber, fuzzySearch, renderIcon } from "@/utils/help
 import { renderToolbar } from "@/utils/meta";
 import { isLogin, toLikePlaylist, updateUserLikePlaylist } from "@/utils/auth";
 import { debounce } from "lodash-es";
-import { useDataStore, useStatusStore } from "@/stores";
+import { useDataStore, useStatusStore, useSettingStore } from "@/stores";
 import { openBatchList, openDescModal, openUpdatePlaylist } from "@/utils/modal";
 import { formatTimestamp } from "@/utils/time";
 import { usePlayer } from "@/utils/player";
@@ -232,6 +245,7 @@ const router = useRouter();
 const player = usePlayer();
 const dataStore = useDataStore();
 const statusStore = useStatusStore();
+const settingStore = useSettingStore();
 
 // 歌单数据
 const playlistData = shallowRef<SongType[]>([]);
