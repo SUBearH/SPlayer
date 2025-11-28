@@ -99,6 +99,14 @@
                     : "播放"
                 }}
               </n-button>
+              <!-- 更多 -->
+              <n-dropdown :options="moreOptions" trigger="click" placement="bottom-start">
+                <n-button :focusable="false" class="more" circle strong secondary>
+                  <template #icon>
+                    <SvgIcon name="List" />
+                  </template>
+                </n-button>
+              </n-dropdown>
               <!-- 正在更新状态指示 -->
               <Transition :name="`router-${settingStore.routeAnimation}`">
                 <n-flex
@@ -115,14 +123,6 @@
                   <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
                 </n-flex>
               </Transition>
-              <!-- 更多 -->
-              <n-dropdown :options="moreOptions" trigger="click" placement="bottom-start">
-                <n-button :focusable="false" class="more" circle strong secondary>
-                  <template #icon>
-                    <SvgIcon name="List" />
-                  </template>
-                </n-button>
-              </n-dropdown>
             </n-flex>
             <n-flex class="right">
               <!-- 模糊搜索 -->
@@ -313,9 +313,9 @@ const resetPlaylistData = (getList: boolean) => {
 const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) => {
   // 加载缓存
   loadLikedCache();
-  // 检查是否存在初始缓存
+  // 在网络请求前检查是否存在初始缓存（区分首次加载和后续更新）
   const cachedSongs = getCachedLikedSongs();
-  hasInitialCache.value = cachedSongs.length > 0;
+  const hasCacheBeforeRequest = cachedSongs.length > 0;
 
   // 获取歌单详情
   const detail = await playlistDetail(id);
@@ -327,6 +327,9 @@ const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) =
     loading.value = false;
     return;
   }
+
+  // 设置 hasInitialCache（在获取数据后设置，表示是否在数据更新前已有缓存）
+  hasInitialCache.value = hasCacheBeforeRequest;
 
   // 如果已登录且歌曲数量少于 1500，直接加载所有歌曲
   if (isLogin() === 1 && (playlistDetailData.value?.count as number) < 1500) {
@@ -390,7 +393,7 @@ const getPlaylistAllSongs = async (
     } else {
       // 增量模式：逐批增量更新缓存
       incrementUpdateLikedSongs(songData, false);
-      playlistData.value = getCachedLikedSongs();
+      playlistData.value = uniqBy(getCachedLikedSongs(), "id");
     }
 
     // 更新偏移
@@ -400,7 +403,7 @@ const getPlaylistAllSongs = async (
   // 刷新模式：一次性替换所有数据
   if (refresh && allSongs.length > 0) {
     incrementUpdateLikedSongs(allSongs, true);
-    playlistData.value = getCachedLikedSongs();
+    playlistData.value = uniqBy(getCachedLikedSongs(), "id");
   }
 
   loading.value = false;

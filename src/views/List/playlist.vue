@@ -112,28 +112,10 @@
                 </template>
                 {{
                   loading && !isSamePlaylist
-                    ? `加载中... (${
-                        playlistData.length === playlistDetailData.count ? 0 : playlistData.length
-                      }/${playlistDetailData.count})`
+                    ? `加载中... (${playlistData.length}/${playlistDetailData.count})`
                     : "播放"
                 }}
               </n-button>
-              <!-- 正在更新状态指示 -->
-              <Transition :name="`router-${settingStore.routeAnimation}`">
-                <n-flex
-                  v-if="loading && isSamePlaylist"
-                  align="center"
-                  :style="{
-                    padding: '6px 16px',
-                    borderRadius: '16px',
-                    backgroundColor: 'var(--n-color-target)',
-                    border: '1px solid rgba(var(--primary), 0.3)',
-                  }"
-                >
-                  <n-spin :size="18" />
-                  <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
-                </n-flex>
-              </Transition>
               <n-button
                 v-if="isUserPlaylist"
                 :focusable="false"
@@ -168,6 +150,22 @@
                   </template>
                 </n-button>
               </n-dropdown>
+              <!-- 正在更新状态指示 -->
+              <Transition :name="`router-${settingStore.routeAnimation}`">
+                <n-flex
+                  v-if="loading && isSamePlaylist"
+                  align="center"
+                  :style="{
+                    padding: '6px 16px',
+                    borderRadius: '16px',
+                    backgroundColor: 'var(--n-color-target)',
+                    border: '1px solid rgba(var(--primary), 0.3)',
+                  }"
+                >
+                  <n-spin :size="18" />
+                  <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
+                </n-flex>
+              </Transition>
             </n-flex>
             <n-flex class="right">
               <!-- 模糊搜索 -->

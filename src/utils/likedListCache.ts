@@ -44,40 +44,43 @@ export function saveLikedListCache(): void {
  * 增量更新歌曲列表
  * @param newSongs 新获取的歌曲
  * @param isRefresh 是否为刷新操作
- * @returns 有变化的歌曲数
+ * @returns 返回更新结果 { added: 新增数, updated: 更新数, removed: 删除数 }
  */
-export function incrementUpdateLikedSongs(newSongs: SongType[], isRefresh: boolean = false): number {
-  if (!newSongs || newSongs.length === 0) return 0;
+export function incrementUpdateLikedSongs(newSongs: SongType[], isRefresh: boolean = false): { added: number; updated: number; removed: number } {
+  if (!newSongs || newSongs.length === 0) return { added: 0, updated: 0, removed: 0 };
 
-  let updatedCount = 0;
+  const result = { added: 0, updated: 0, removed: 0 };
 
   if (isRefresh) {
     // 刷新模式：替换整个列表
     const oldCount = likedListCache.songs.length;
     likedListCache.songs = newSongs;
-    updatedCount = Math.abs(newSongs.length - oldCount) + Math.min(newSongs.length, oldCount);
+    result.removed = Math.max(0, oldCount - newSongs.length);
+    result.added = Math.max(0, newSongs.length - oldCount);
+    result.updated = Math.min(oldCount, newSongs.length);
   } else {
-    // 增量模式：只添加新歌曲
-    const existingIds = new Set(likedListCache.songs.map(s => s.id));
-    const songsToAdd = newSongs.filter(s => !existingIds.has(s.id));
+    // 增量模式：只添加新歌曲，更新现有歌曲信息
+    const existingMap = new Map(likedListCache.songs.map(s => [s.id, s]));
+    const newSongIds = new Set<number>();
 
-    if (songsToAdd.length > 0) {
-      likedListCache.songs.push(...songsToAdd);
-      updatedCount = songsToAdd.length;
-    }
-
-    // 检测现有歌曲是否有更新（比对音质等信息）
     newSongs.forEach(newSong => {
-      const existing = likedListCache.songs.find(s => s.id === newSong.id);
-      if (existing && JSON.stringify(existing) !== JSON.stringify(newSong)) {
+      newSongIds.add(newSong.id);
+      const existing = existingMap.get(newSong.id);
+
+      if (!existing) {
+        // 新歌曲
+        likedListCache.songs.push(newSong);
+        result.added++;
+      } else if (JSON.stringify(existing) !== JSON.stringify(newSong)) {
+        // 现有歌曲但信息有更新（音质、cover 等）
         Object.assign(existing, newSong);
-        updatedCount++;
+        result.updated++;
       }
     });
   }
 
   likedListCache.lastUpdateTime = Date.now();
-  return updatedCount;
+  return result;
 }
 
 /**
