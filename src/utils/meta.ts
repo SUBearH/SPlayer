@@ -6,11 +6,11 @@ import { compact, findKey, keys, pick, takeWhile } from "lodash-es";
 export const songLevelData = {
   l: {
     level: "standard",
-    name: "标准音质",
+    name: "LQ",
   },
   m: {
     level: "higher",
-    name: "较高音质",
+    name: "MQ",
   },
   h: {
     level: "exhigh",

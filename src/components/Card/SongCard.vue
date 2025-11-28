@@ -47,7 +47,7 @@
               v-if="song?.quality && settingStore.showSongQuality"
               :bordered="false"
               :type="song.quality === QualityType.SQ ? 'warning' : qualityColor"
-              :class="['quality', `quality-${song.quality?.toLowerCase()}`]"
+              :class="['quality', getQualityClassName(song.quality)]"
               round
             >
               {{ song.quality }}
@@ -191,11 +191,25 @@ const song = toRef(props, "song");
 
 // 音质颜色
 const qualityColor = computed(() => {
-  if (song.value.quality === QualityType.HiRes) return "warning";
-  if (song.value.quality === QualityType.SQ) return "warning";
-  if (song.value.quality === QualityType.HQ) return "info";
+  const quality = song.value.quality;
+  if (quality === QualityType.HiRes || quality === "Hi-Res") return "warning";
+  if (quality === QualityType.SQ || quality === "SQ") return "warning";
+  if (quality === QualityType.HQ || quality === "HQ") return "info";
+  if (quality?.includes("Dolby") || quality === "Dolby Atmos") return "default";
   return "default";
 });
+
+// 获取音质标签的CSS类名
+const getQualityClassName = (quality: string | undefined): string => {
+  if (!quality) return "";
+  if (quality === "Hi-Res") return "quality-hi-res";
+  if (quality === "SQ") return "quality-sq";
+  if (quality === "HQ") return "quality-hq";
+  if (quality === "MQ") return "quality-mq";
+  if (quality === "LQ") return "quality-lq";
+  if (quality?.includes("Dolby")) return "quality-dolby";
+  return `quality-${quality.toLowerCase().replace(/\s+/g, "-")}`;
+};
 
 // 加载本地歌曲封面
 const localCover = async (show: boolean) => {
@@ -341,6 +355,15 @@ const localCover = async (show: boolean) => {
             background-color: rgba(255, 127, 0, 0.04) !important;
             border-color: rgba(255, 127, 0, 0.4) !important;
             color: rgb(255, 127, 0) !important;
+          }
+
+          // HQ、MQ、LQ 样式 - 灰色
+          &.quality-hq,
+          &.quality-mq,
+          &.quality-lq {
+            background-color: rgba(128, 128, 128, 0.04) !important;
+            border-color: rgba(128, 128, 128, 0.4) !important;
+            color: rgb(128, 128, 128) !important;
           }
 
           // Dolby 样式 - 蓝紫色（与播放页保持一致）
