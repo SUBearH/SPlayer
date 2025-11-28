@@ -73,7 +73,7 @@
             </template>
             <!-- MV -->
             <n-tag
-              v-if="song?.mv"
+              v-if="song?.mv && settingStore.showSongMVTag"
               :bordered="false"
               class="mv"
               type="warning"
