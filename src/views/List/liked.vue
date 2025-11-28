@@ -190,15 +190,13 @@ import { debounce, isObject, uniqBy } from "lodash-es";
 import { useDataStore, useStatusStore, useSettingStore } from "@/stores";
 import { openBatchList, openDescModal, openUpdatePlaylist } from "@/utils/modal";
 import { formatTimestamp } from "@/utils/time";
-import { isLogin, updateUserLikePlaylist } from "@/utils/auth";
+import { isLogin, updateUserLikePlaylist, updateUserLikeSongs, toLikeSong } from "@/utils/auth";
 import { usePlayer } from "@/utils/player";
 import {
-  initializeLikedListCache,
   saveLikedListCache,
   getCachedLikedSongs,
   setCachedLikedListDetail,
   incrementUpdateLikedSongs,
-  removeLikedSong,
 } from "@/utils/likedListCache";
 
 const router = useRouter();
@@ -246,6 +244,18 @@ const isLikedPage = computed(() => router.currentRoute.value.name === "like-song
 
 // 更多操作
 const moreOptions = computed<DropdownOption[]>(() => [
+    {
+    label: "全量更新",
+    key: "fullUpdate",
+    props: {
+      onClick: () => {
+        if (!playlistId.value) return;
+        window.$message.info("开始全量更新，请稍候...");
+        getPlaylistDetail(playlistId.value, { getList: true, refresh: true, fullUpdate: true });
+      },
+    },
+    icon: renderIcon("Refresh"),
+  },
   {
     label: "编辑歌单",
     key: "edit",
@@ -285,21 +295,23 @@ const getPlaylistDetail = async (
   options: {
     getList: boolean;
     refresh: boolean;
+    fullUpdate?: boolean; // 是否全量更新（默认false只更新500首）
   } = {
     getList: true,
     refresh: false,
+    fullUpdate: false,
   },
 ) => {
   if (!id) return;
   // 设置加载状态
   loading.value = true;
-  const { getList, refresh } = options;
+  const { getList, refresh, fullUpdate } = options;
   // 清空数据
   clearInput();
   // 仅在刷新模式下清空列表，增量模式下保留缓存
   if (refresh) resetPlaylistData(getList);
   // 获取歌单内容
-  getPlaylistData(id, getList, refresh);
+  getPlaylistData(id, getList, refresh, fullUpdate);
 };
 
 // 重置歌单数据
@@ -312,10 +324,12 @@ const resetPlaylistData = (getList: boolean) => {
 };
 
 // 获取歌单
-const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) => {
-  // 加载缓存
-  loadLikedCache();
-
+const getPlaylistData = async (
+  id: number,
+  getList: boolean,
+  refresh: boolean,
+  fullUpdate: boolean = false,
+) => {
   // 获取歌单详情
   const detail = await playlistDetail(id);
   playlistDetailData.value = formatCoverList(detail.playlist)[0];
@@ -327,29 +341,49 @@ const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) =
     return;
   }
 
-  // 如果已登录且歌曲数量少于 1500，直接加载所有歌曲
-  if (isLogin() === 1 && (playlistDetailData.value?.count as number) < 1500) {
-    const ids: number[] = detail.privileges.map((song: any) => song.id as number);
-    const result = await songDetail(ids);
-    const songs = formatSongsList(result.songs);
-    // 增量更新缓存
-    incrementUpdateLikedSongs(songs, refresh);
-    // 使用去重后的歌曲列表
-    playlistData.value = uniqBy(getCachedLikedSongs(), "id");
+  // 默认只获取200首，fullUpdate为true时获取全部
+  const limitCount = fullUpdate ? (playlistDetailData.value.count || 0) : Math.min(200, playlistDetailData.value.count || 0);
+
+  // 仅在刷新模式下才清空缓存重新加载，增量模式下保留已有缓存
+  if (refresh) {
+    // 刷新模式：清空旧数据，重新从服务器拉取数据
+    if (isLogin() === 1 && limitCount < 1500) {
+      const ids: number[] = detail.privileges.slice(0, limitCount).map((song: any) => song.id as number);
+      const result = await songDetail(ids);
+      const songs = formatSongsList(result.songs);
+      incrementUpdateLikedSongs(songs, true);
+    } else {
+      await getPlaylistAllSongs(id, limitCount, true);
+    }
   } else {
-    await getPlaylistAllSongs(id, playlistDetailData.value.count || 0, refresh);
+    // 增量模式：先加载本地缓存，然后与服务器数据合并
+    loadLikedCache();
+
+    if (isLogin() === 1 && limitCount < 1500) {
+      const ids: number[] = detail.privileges.slice(0, limitCount).map((song: any) => song.id as number);
+      const result = await songDetail(ids);
+      const songs = formatSongsList(result.songs);
+      incrementUpdateLikedSongs(songs, false);
+    } else {
+      await getPlaylistAllSongs(id, limitCount, false);
+    }
   }
+
+  // 使用去重后的歌曲列表
+  playlistData.value = uniqBy(getCachedLikedSongs(), "id");
+
+  // 重要：从"我喜欢的音乐"歌单返回的所有歌曲都应该被标记为已喜欢
+  // 同步到 dataStore.userLikeData.songs
+  const likedSongIds = playlistData.value.map((song) => song.id);
+  dataStore.setUserLikeData("songs", likedSongIds);
 
   // 更新我喜欢
   dataStore.setLikeSongsList(playlistDetailData.value, playlistData.value);
   loading.value = false;
 };
 
-// 加载缓存
+// 加载缓存（仅在 app 启动时调用一次，之后通过 getPlaylistData 按需加载）
 const loadLikedCache = () => {
-  // 先加载本地缓存
-  initializeLikedListCache();
-
   // 获取缓存的歌曲列表
   const cachedSongs = getCachedLikedSongs();
   if (cachedSongs.length > 0) {
@@ -370,10 +404,8 @@ const loadLikedCache = () => {
 const getPlaylistAllSongs = async (
   id: number,
   count: number,
-  // 是否为刷新列表
   refresh: boolean = false,
 ) => {
-  loading.value = true;
   // 循环获取
   let offset: number = 0;
   const limit: number = 1000;
@@ -389,7 +421,6 @@ const getPlaylistAllSongs = async (
     } else {
       // 增量模式：逐批增量更新缓存
       incrementUpdateLikedSongs(songData, false);
-      playlistData.value = uniqBy(getCachedLikedSongs(), "id");
     }
 
     // 更新偏移
@@ -399,10 +430,7 @@ const getPlaylistAllSongs = async (
   // 刷新模式：一次性替换所有数据
   if (refresh && allSongs.length > 0) {
     incrementUpdateLikedSongs(allSongs, true);
-    playlistData.value = uniqBy(getCachedLikedSongs(), "id");
   }
-
-  loading.value = false;
 };
 
 // 列表滚动
@@ -442,20 +470,36 @@ const loadingMsgShow = (show: boolean = true) => {
   }
 };
 
-// 删除指定索引歌曲
+// 删除指定歌曲（实际上是取消喜欢）
 const removeSong = (ids: number[]) => {
   if (!playlistData.value) return;
+
+  // 对于"我喜欢的音乐"，删除歌曲 = 取消喜欢
+  // 需要通过 API 实际删除而不是只删除本地 UI
+  ids.forEach((id) => {
+    // 查找对应的歌曲对象
+    const song = playlistData.value.find((s) => s.id === id);
+    if (song) {
+      // 调用 toLikeSong 来取消喜欢（这会更新 dataStore 和缓存）
+      toLikeSong(song, false);
+    }
+  });
+
+  // 从 UI 列表中立即删除（不等待 API 响应）
   playlistData.value = playlistData.value.filter((song) => !ids.includes(song.id));
-  // 同时更新缓存
-  removeLikedSong(ids);
-  saveLikedListCache();
 };
 
 onActivated(() => {
   if (!isActivated.value) {
     isActivated.value = true;
   } else {
-    getPlaylistDetail(playlistId.value, { getList: true, refresh: true });
+    // 再次进入页面时，先同步最新的喜欢状态（防止其他客户端的修改）
+    updateUserLikeSongs().catch((error) => {
+      console.error("Failed to sync like songs:", error);
+    });
+
+    // 然后刷新歌单数据（默认只刷新200首）
+    getPlaylistDetail(playlistId.value, { getList: true, refresh: true, fullUpdate: false });
   }
 });
 
@@ -484,13 +528,14 @@ onMounted(async () => {
   // 获取我喜欢的音乐歌单ID
   const likedPlaylistId = dataStore.userLikeData.playlists?.[0]?.id;
   if (likedPlaylistId) {
-    getPlaylistDetail(likedPlaylistId);
+    // 首次加载只加载500首（fullUpdate: false）
+    getPlaylistDetail(likedPlaylistId, { getList: true, refresh: false, fullUpdate: false });
   } else {
     // 如果没有找到我喜欢的音乐歌单，尝试从缓存获取
     const data: any = await dataStore.getUserLikePlaylist();
     const id = data?.detail?.id;
     if (id) {
-      getPlaylistDetail(id);
+      getPlaylistDetail(id, { getList: true, refresh: false, fullUpdate: false });
     } else {
       loading.value = false;
       window.$message.error("无法获取我喜欢的音乐歌单");

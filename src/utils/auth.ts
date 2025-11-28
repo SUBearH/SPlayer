@@ -23,6 +23,7 @@ import { likePlaylist, playlistTracks } from "@/api/playlist";
 import { likeArtist } from "@/api/artist";
 import { likeAlbum } from "@/api/album";
 import { radioSub } from "@/api/radio";
+import { removeLikedSong, saveLikedListCache } from "@/utils/likedListCache";
 
 /**
  * 用户是否登录
@@ -211,25 +212,46 @@ export const toLikeSong = debounce(
       window.$message.warning("本地歌曲暂不支持该操作");
       return;
     }
+
+    // 获取当前状态（从API或本地缓存）
     const likeList = dataStore.userLikeData.songs;
-    const exists = likeList.includes(id);
+    const currentExists = likeList.includes(id);
+
+    // 如果要喜欢的歌曲已经被喜欢，或要取消喜欢的歌曲已经被取消，则跳过
+    if ((like && currentExists) || (!like && !currentExists)) {
+      window.$message.info((like ? "已" : "已取消") + "喜欢该歌曲");
+      return;
+    }
+
+    // 调用API修改喜欢状态
     const { code } = await likeSong(id, like);
     if (code === 200) {
-      if (like && !exists) {
+      // 乐观更新本地状态
+      if (like) {
         likeList.push(id);
         window.$message.success("已添加到我喜欢的音乐");
-      } else if (!like && exists) {
+      } else {
         likeList.splice(likeList.indexOf(id), 1);
         window.$message.success("已取消喜欢");
-      } else if (like && exists) {
-        window.$message.info("我喜欢的音乐中已存在该歌曲");
+        // 同时更新缓存中该歌曲的信息
+        removeLikedSong([id]);
+        saveLikedListCache();
       }
-      // 更新
+
+      // 更新全局状态
       dataStore.setUserLikeData("songs", likeList);
-      // ipc
+
+      // ipc 通知
       if (isElectron) window.electron.ipcRenderer.send("like-status-change", like);
     } else {
       window.$message.error(`${like ? "喜欢" : "取消"}音乐时发生错误`);
+
+      // 如果操作失败，从服务器重新获取最新的喜欢状态
+      try {
+        await updateUserLikeSongs();
+      } catch (error) {
+        console.error("Failed to sync like songs after error:", error);
+      }
       return;
     }
   },
@@ -260,9 +282,22 @@ const toLikeSomething = (
       if (code === 200) {
         window.$message.success((like ? "" : "取消") + actionName + thingName + "成功");
         // 更新
-        await update();
+        try {
+          await update();
+        } catch (error) {
+          console.error("Failed to update after like/unlike:", error);
+          window.$message.warning("操作成功但更新数据失败，请刷新页面");
+        }
       } else {
-        window.$message.success((like ? "" : "取消") + actionName + thingName + "失败，请重试");
+        window.$message.error((like ? "" : "取消") + actionName + thingName + "失败，请重试");
+
+        // 操作失败时，从服务器重新获取最新状态
+        try {
+          await update();
+          window.$message.info("已从服务器重新加载数据");
+        } catch (error) {
+          console.error("Failed to sync data after failed request:", error);
+        }
         return;
       }
     },
