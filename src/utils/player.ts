@@ -113,6 +113,7 @@ class Player {
    * 预载下一首歌曲的播放地址（优先官方，失败则并发尝试解灰）
    * 仅缓存 URL，不实例化播放器
    */
+  // @ts-ignore - 预留方法，可能在后续版本使用
   private async prefetchNextSongUrl() {
     try {
       const dataStore = useDataStore();
@@ -490,7 +491,6 @@ class Player {
   private async parseLocalMusicInfo(path: string) {
     try {
       const musicStore = useMusicStore();
-      const statusStore = useStatusStore();
       // 获取封面数据
       const coverData = await window.electron.ipcRenderer.invoke("get-music-cover", path);
       if (coverData) {

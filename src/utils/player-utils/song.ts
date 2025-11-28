@@ -1,6 +1,6 @@
 import { songUrl, unlockSongUrl, songQuality } from "@/api/song";
 import { useDataStore, useMusicStore, useSettingStore, useStatusStore } from "@/stores";
-import type { QualityType, SongType } from "@/types/main";
+import type { SongType } from "@/types/main";
 import { isElectron } from "../env";
 import { getCoverColorData } from "../color";
 import { songLevelData } from "../meta";
@@ -212,7 +212,7 @@ export const getNextSongUrl = async (): Promise<{
   id: number;
   url: string | null;
   ublock: boolean;
-  quality?: QualityType | undefined;
+  quality?: string | undefined;
 } | null> => {
   try {
     const dataStore = useDataStore();
