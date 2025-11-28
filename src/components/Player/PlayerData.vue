@@ -119,32 +119,35 @@ const musicStore = useMusicStore();
 const statusStore = useStatusStore();
 const settingStore = useSettingStore();
 
-// 加载过程中显示缓存上一首歌曲的音质
+// 标记当前歌曲ID
+const currentSongId = ref<number>();
+// 缓存当前歌曲的质量，切换歌曲时保持显示，直到新歌曲质量加载完成
 const cachedQuality = ref<string>("");
-// 标记当前歌曲是否加载完成
-const qualityLoadingComplete = ref(true);
 
-// 优先显示当前歌曲的音质，加载中显示缓存，加载失败显示"未知音质"
+// 当前歌曲质量显示值
 const currentQuality = computed(() => {
-  const quality = musicStore.playSong.quality;
-  if (quality) {
-    cachedQuality.value = quality;
-    qualityLoadingComplete.value = true;
-    return quality;
-  }
-  if (qualityLoadingComplete.value) {
-    qualityLoadingComplete.value = false;
-  }
-  return cachedQuality.value || "未知音质";
+  return cachedQuality.value;
 });
 
-// 监听歌曲变化，重置加载状态
+// 监听歌曲ID变化，新歌曲切换时重置加载标记
 watch(
   () => musicStore.playSong.id,
-  () => {
-    // 新歌曲切换时，重置加载状态标记（但保留缓存）
-    if (!musicStore.playSong.quality) {
-      qualityLoadingComplete.value = false;
+  (newId) => {
+    // 如果ID真的改变了，标记新歌曲
+    if (newId !== currentSongId.value) {
+      currentSongId.value = newId;
+    }
+  }
+);
+
+// 监听歌曲质量变化，只有当质量属于当前歌曲时才更新显示
+watch(
+  () => musicStore.playSong.quality,
+  (quality) => {
+    // 只有当质量数据对应当前歌曲ID时才更新缓存
+    // 确保不会被中间歌曲的质量加载所影响
+    if (quality && musicStore.playSong.id === currentSongId.value) {
+      cachedQuality.value = quality;
     }
   }
 );
