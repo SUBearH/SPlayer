@@ -278,12 +278,12 @@ const jumpPage = debounce(
       padding: 2px 6px;
       border: 1px solid rgba(var(--main-color), 0.6);
       transition: all 0.3s ease;
-      opacity: 0.85;
+      opacity: 0.6;
 
       &.quality-sq {
         border: 1px solid rgba(255, 127, 0, 0.6);
         color: rgb(255, 127, 0);
-        opacity: 0.9;
+        opacity: 0.8;
       }
 
       &.quality-hires {
@@ -294,7 +294,7 @@ const jumpPage = debounce(
         letter-spacing: 0.8px;
         box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.15);
         text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
-        opacity: 1;
+        opacity: 0.6;
 
         &:hover {
           box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2);
@@ -308,7 +308,7 @@ const jumpPage = debounce(
         font-weight: 600;
         letter-spacing: 0.5px;
         box-shadow: 0 0 12px rgba(100, 150, 255, 0.3), inset 0 0 8px rgba(100, 150, 255, 0.1);
-        opacity: 0.95;
+        opacity: 0.8;
 
         &:hover {
           box-shadow: 0 0 20px rgba(100, 150, 255, 0.5), inset 0 0 12px rgba(100, 150, 255, 0.15);

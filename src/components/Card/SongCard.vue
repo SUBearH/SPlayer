@@ -42,11 +42,12 @@
               {{ song?.name || "未知曲目" }}
             </n-ellipsis>
             <!-- 音质 -->
+            <!-- 音质标签 -->
             <n-tag
               v-if="song?.quality && settingStore.showSongQuality"
               :bordered="false"
-              :type="qualityColor"
-              class="quality"
+              :type="song.quality === QualityType.SQ ? 'warning' : qualityColor"
+              :class="['quality', `quality-${song.quality?.toLowerCase()}`]"
               round
             >
               {{ song.quality }}
@@ -193,7 +194,7 @@ const qualityColor = computed(() => {
   if (song.value.quality === QualityType.HiRes) return "warning";
   if (song.value.quality === QualityType.SQ) return "warning";
   if (song.value.quality === QualityType.HQ) return "info";
-  return "primary";
+  return "default";
 });
 
 // 加载本地歌曲封面
@@ -328,15 +329,8 @@ const localCover = async (show: boolean) => {
           }
         }
         .quality {
-          font-size: 11px;
-          font-weight: 600;
-          padding: 3px 8px !important;
-          border-radius: 6px;
-          border: 1px solid;
-
           // Hi-Res 特殊样式 - 金色
-          &:has(+ *:contains("Hi-Res")),
-          :deep([class*="type-warning"]) {
+          &.quality-hi-res {
             background-color: rgba(255, 215, 0, 0.12) !important;
             border-color: rgba(255, 215, 0, 0.6) !important;
             color: rgb(255, 215, 0) !important;
@@ -344,7 +338,7 @@ const localCover = async (show: boolean) => {
           }
 
           // SQ 无损样式 - 橙色
-          &:has(+ *:contains("SQ")) {
+          &.quality-sq {
             background-color: rgba(255, 127, 0, 0.1) !important;
             border-color: rgba(255, 127, 0, 0.5) !important;
             color: rgb(255, 127, 0) !important;
@@ -352,15 +346,23 @@ const localCover = async (show: boolean) => {
           }
 
           // HQ 高质量样式 - 蓝色
-          &:has(+ *:contains("HQ")) {
+          &.quality-hq {
             background-color: rgba(100, 200, 255, 0.1) !important;
             border-color: rgba(100, 200, 255, 0.5) !important;
             color: rgb(100, 180, 255) !important;
           }
 
+          // Dolby 样式 - 金色
+          &.quality-dolby {
+            background-color: rgba(255, 215, 0, 0.12) !important;
+            border-color: rgba(255, 215, 0, 0.6) !important;
+            color: rgb(255, 215, 0) !important;
+            font-weight: 700;
+          }
+
           // 默认/低质样式 - 灰色
-          &:has(+ *:contains("MQ")),
-          &:has(+ *:contains("LQ")) {
+          &.quality-mq,
+          &.quality-lq {
             background-color: rgba(128, 128, 128, 0.08) !important;
             border-color: rgba(128, 128, 128, 0.4) !important;
             color: rgb(128, 128, 128) !important;
