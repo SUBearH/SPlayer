@@ -113,14 +113,16 @@
                   v-if="loading && hasInitialCache"
                   align="center"
                   :style="{
-                    padding: '6px 16px',
-                    borderRadius: '16px',
+                    height: '40px',
+                    padding: '0 16px',
+                    borderRadius: '20px',
                     backgroundColor: 'var(--n-color-target)',
                     border: '1px solid rgba(var(--primary), 0.3)',
+                    fontSize: '14px',
                   }"
                 >
                   <n-spin :size="18" />
-                  <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
+                  <n-text style="margin-left: 6px">正在更新...</n-text>
                 </n-flex>
               </Transition>
             </n-flex>
@@ -223,8 +225,8 @@ const playlistId = computed<number>(() => dataStore.userLikeData.playlists?.[0]?
 const loading = ref<boolean>(true);
 const loadingMsg = ref<MessageReactive | null>(null);
 
-// 是否存在初始缓存（用于区分首次加载和后续更新）
-const hasInitialCache = ref<boolean>(false);
+// 是否存在初始缓存（通过检查缓存是否为空来判断，而不是基于 app 启动后第一次加载）
+const hasInitialCache = computed<boolean>(() => getCachedLikedSongs().length > 0);
 
 // 列表是否滚动
 const listScrolling = ref<boolean>(false);
@@ -313,9 +315,6 @@ const resetPlaylistData = (getList: boolean) => {
 const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) => {
   // 加载缓存
   loadLikedCache();
-  // 在网络请求前检查是否存在初始缓存（区分首次加载和后续更新）
-  const cachedSongs = getCachedLikedSongs();
-  const hasCacheBeforeRequest = cachedSongs.length > 0;
 
   // 获取歌单详情
   const detail = await playlistDetail(id);
@@ -327,9 +326,6 @@ const getPlaylistData = async (id: number, getList: boolean, refresh: boolean) =
     loading.value = false;
     return;
   }
-
-  // 设置 hasInitialCache（在获取数据后设置，表示是否在数据更新前已有缓存）
-  hasInitialCache.value = hasCacheBeforeRequest;
 
   // 如果已登录且歌曲数量少于 1500，直接加载所有歌曲
   if (isLogin() === 1 && (playlistDetailData.value?.count as number) < 1500) {

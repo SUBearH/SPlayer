@@ -156,14 +156,16 @@
                   v-if="loading && isSamePlaylist"
                   align="center"
                   :style="{
-                    padding: '6px 16px',
-                    borderRadius: '16px',
+                    height: '40px',
+                    padding: '0 16px',
+                    borderRadius: '20px',
                     backgroundColor: 'var(--n-color-target)',
                     border: '1px solid rgba(var(--primary), 0.3)',
+                    fontSize: '14px',
                   }"
                 >
                   <n-spin :size="18" />
-                  <n-text style="margin-left: 6px; font-size: 14px">正在更新...</n-text>
+                  <n-text style="margin-left: 6px">正在更新...</n-text>
                 </n-flex>
               </Transition>
             </n-flex>
