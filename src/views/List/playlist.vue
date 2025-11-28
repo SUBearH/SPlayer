@@ -426,10 +426,7 @@ const loadingMsgShow = (show: boolean = true, count?: number) => {
   if (show) {
     if (count && count <= 800) return;
     loadingMsg.value?.destroy();
-    loadingMsg.value = window.$message.loading("该歌单歌曲数量过多，请稍等", {
-      duration: 0,
-      closable: true,
-    });
+    loadingMsg.value = null;
   } else {
     loadingMsg.value?.destroy();
     loadingMsg.value = null;
