@@ -9,7 +9,6 @@
           class="item"
           style="cursor: default;"
         >
-        >
           <SvgIcon :name="item.icon" :depth="3" />
           <n-number-animation :from="0" :to="item.length" />
         </div>
