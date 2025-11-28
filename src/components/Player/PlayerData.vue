@@ -106,7 +106,7 @@
 import type { RouteLocationRaw } from "vue-router";
 import { useMusicStore, useStatusStore, useSettingStore } from "@/stores";
 import { debounce, isObject } from "lodash-es";
-import { getCachedQuality, setCachedQuality } from "@/utils/qualityCache";
+import { getCachedQuality, updateCachedQuality } from "@/utils/qualityCache";
 
 defineProps<{
   center?: boolean;
@@ -132,9 +132,12 @@ const currentQuality = computed(() => {
 
   // 如果当前歌曲有质量数据
   if (quality && songId === currentSongId.value) {
-    // 更新缓存
-    cachedQuality.value = quality;
-    setCachedQuality(songId, quality);
+    // 比对并更新缓存，返回值为更新后的质量（有变化）或 undefined（无变化）
+    const updatedQuality = updateCachedQuality(songId, quality);
+    if (updatedQuality) {
+      cachedQuality.value = updatedQuality;
+      return updatedQuality;
+    }
     return quality;
   }
 

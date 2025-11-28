@@ -23,7 +23,7 @@
         <s-image
           v-if="!hiddenCover"
           :key="song.cover"
-          :src="song.path ? song.cover : song.coverSize?.s || song.cover"
+          :src="displayCover"
           class="cover"
           @update:show="localCover"
         />
@@ -166,7 +166,8 @@ import { formatTimestamp, msToTime } from "@/utils/time";
 import { usePlayer } from "@/utils/player";
 import { isElectron } from "@/utils/env";
 import blob from "@/utils/blob";
-import { getCachedQuality, setCachedQuality } from "@/utils/qualityCache";
+import { getCachedQuality, updateCachedQuality, getCachedCover, updateCachedCover } from "@/utils/qualityCache";
+import { getCachedImageUrl, cacheImageUrl } from "@/utils/imageCache";
 
 const props = defineProps<{
   // 歌曲
@@ -200,15 +201,22 @@ const displayQuality = computed(() => {
 
   // 如果当前卡片是播放中的歌曲，使用播放页的标签
   if (playSongId === currentSongId && musicStore.playSong.quality) {
-    cachedQuality.value = musicStore.playSong.quality;
-    setCachedQuality(currentSongId, musicStore.playSong.quality);
+    const updated = updateCachedQuality(currentSongId, musicStore.playSong.quality);
+    if (updated) {
+      cachedQuality.value = updated;
+      return updated;
+    }
     return musicStore.playSong.quality;
   }
 
-  // 如果有新质量数据且与缓存不同，更新缓存和全局缓存
+  // 如果有新质量数据且与缓存不同，比对并更新缓存
   if (quality && quality !== cachedQuality.value) {
+    const updated = updateCachedQuality(currentSongId, quality);
+    if (updated) {
+      cachedQuality.value = updated;
+      return updated;
+    }
     cachedQuality.value = quality;
-    setCachedQuality(currentSongId, quality);
     return quality;
   }
 
@@ -238,14 +246,39 @@ const qualityColor = computed(() => {
 // 加载本地歌曲封面
 const localCover = async (show: boolean) => {
   if (!isElectron || !show || !song.value.path) return;
-  if (song.value.cover || song.value.cover === "/images/song.jpg?assest") return;
+  // 修复逻辑：如果已有有效封面（且不是默认图片），则不需要加载
+  if (song.value.cover && song.value.cover !== "/images/song.jpg?assest") return;
+
+  // 首先尝试从缓存中获取
+  const cachedCover = getCachedCover(song.value.id);
+  if (cachedCover) {
+    song.value.cover = cachedCover;
+    return;
+  }
+
   // 获取封面
   const coverData = await window.electron.ipcRenderer.invoke("get-music-cover", song.value.path);
   if (!coverData) return;
   const { data, format } = coverData;
   const blobURL = blob.createBlobURL(data, format, song.value.path);
-  if (blobURL) song.value.cover = blobURL;
+  if (blobURL) {
+    // 先缓存 Data URL 以支持离线显示（使用原始 blobURL）
+    cacheImageUrl(blobURL, blobURL);
+    // 比对并保存到缓存，如果有更新则使用更新的值
+    const updatedCover = updateCachedCover(song.value.id, blobURL);
+    song.value.cover = updatedCover || blobURL;
+  }
 };
+
+// 显示的封面（支持图片缓存和离线显示）
+const displayCover = computed(() => {
+  const cover = song.value.path ? song.value.cover : song.value.coverSize?.s || song.value.cover;
+  if (!cover) return cover;
+
+  // 优先使用缓存的图片 Data URL（离线可用）
+  const cachedImageUrl = getCachedImageUrl(cover);
+  return cachedImageUrl || cover;
+});
 </script>
 
 <style lang="scss" scoped>

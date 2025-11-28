@@ -9,10 +9,19 @@ import router from "@/router";
 import { debounceDirective, throttleDirective, visibleDirective } from "@/utils/instruction";
 // ipc
 import initIpc from "@/utils/initIpc";
+// 缓存管理
+import { initializeCache, saveCache } from "@/utils/qualityCache";
+import { initializeLikedListCache, saveLikedListCache } from "@/utils/likedListCache";
+import { initializeImageCache, saveImageCache } from "@/utils/imageCache";
 // 全局样式
 import "@/style/main.scss";
 import "@/style/animate.scss";
 import "github-markdown-css/github-markdown.css";
+
+// 初始化缓存（从本地存储加载）
+initializeCache();
+initializeLikedListCache();
+initializeImageCache();
 
 // 初始化 ipc
 initIpc();
@@ -31,3 +40,10 @@ app.directive("throttle", throttleDirective);
 app.directive("visible", visibleDirective);
 // app
 app.mount("#app");
+
+// 页面关闭时保存缓存
+window.addEventListener("beforeunload", () => {
+  saveCache();
+  saveLikedListCache();
+  saveImageCache();
+});
