@@ -328,33 +328,41 @@ const localCover = async (show: boolean) => {
           }
         }
         .quality {
-          font-size: 10px;
-          font-weight: 500;
-          padding: 2px 8px !important;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 8px !important;
+          border-radius: 6px;
+          border: 1px solid;
 
-          // Hi-Res 特殊样式
+          // Hi-Res 特殊样式 - 金色
           &:has(+ *:contains("Hi-Res")),
           :deep([class*="type-warning"]) {
-            background-color: rgba(255, 215, 0, 0.15) !important;
+            background-color: rgba(255, 215, 0, 0.12) !important;
+            border-color: rgba(255, 215, 0, 0.6) !important;
             color: rgb(255, 215, 0) !important;
+            font-weight: 700;
           }
 
-          // SQ 无损样式
+          // SQ 无损样式 - 橙色
           &:has(+ *:contains("SQ")) {
-            background-color: rgba(255, 127, 0, 0.12) !important;
+            background-color: rgba(255, 127, 0, 0.1) !important;
+            border-color: rgba(255, 127, 0, 0.5) !important;
             color: rgb(255, 127, 0) !important;
+            font-weight: 700;
           }
 
-          // HQ 高质量样式
+          // HQ 高质量样式 - 蓝色
           &:has(+ *:contains("HQ")) {
-            background-color: rgba(100, 200, 255, 0.12) !important;
+            background-color: rgba(100, 200, 255, 0.1) !important;
+            border-color: rgba(100, 200, 255, 0.5) !important;
             color: rgb(100, 180, 255) !important;
           }
 
-          // 默认/低质样式
+          // 默认/低质样式 - 灰色
           &:has(+ *:contains("MQ")),
           &:has(+ *:contains("LQ")) {
             background-color: rgba(128, 128, 128, 0.08) !important;
+            border-color: rgba(128, 128, 128, 0.4) !important;
             color: rgb(128, 128, 128) !important;
           }
         }
