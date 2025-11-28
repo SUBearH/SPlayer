@@ -331,41 +331,23 @@ const localCover = async (show: boolean) => {
         .quality {
           // Hi-Res 特殊样式 - 金色
           &.quality-hi-res {
-            background-color: rgba(255, 215, 0, 0.12) !important;
-            border-color: rgba(255, 215, 0, 0.6) !important;
+            background-color: rgba(255, 215, 0, 0.04) !important;
+            border-color: rgba(255, 215, 0, 0.4) !important;
             color: rgb(255, 215, 0) !important;
-            font-weight: 700;
           }
 
           // SQ 无损样式 - 橙色
           &.quality-sq {
-            background-color: rgba(255, 127, 0, 0.1) !important;
-            border-color: rgba(255, 127, 0, 0.5) !important;
+            background-color: rgba(255, 127, 0, 0.04) !important;
+            border-color: rgba(255, 127, 0, 0.4) !important;
             color: rgb(255, 127, 0) !important;
-            font-weight: 700;
           }
 
-          // HQ 高质量样式 - 蓝色
-          &.quality-hq {
-            background-color: rgba(100, 200, 255, 0.1) !important;
-            border-color: rgba(100, 200, 255, 0.5) !important;
-            color: rgb(100, 180, 255) !important;
-          }
-
-          // Dolby 样式 - 金色
+          // Dolby 样式 - 蓝紫色（与播放页保持一致）
           &.quality-dolby {
-            background-color: rgba(255, 215, 0, 0.12) !important;
-            border-color: rgba(255, 215, 0, 0.6) !important;
-            color: rgb(255, 215, 0) !important;
-            font-weight: 700;
-          }
-
-          // 默认/低质样式 - 灰色
-          &.quality-mq,
-          &.quality-lq {
-            background-color: rgba(128, 128, 128, 0.08) !important;
-            border-color: rgba(128, 128, 128, 0.4) !important;
-            color: rgb(128, 128, 128) !important;
+            background-color: rgba(100, 150, 255, 0.04) !important;
+            border-color: rgba(100, 150, 255, 0.4) !important;
+            color: rgb(100, 150, 255) !important;
           }
         }
         .cloud {
