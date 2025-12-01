@@ -24,11 +24,11 @@ const isKeepDrawing = ref<boolean>(true);
  * 绘制音乐频谱图
  */
 const drawSpectrum = () => {
-  // 直接从 Player 获取数据
   const spectrumData = player.getSpectrumData();
-  if (!spectrumData) return;
 
-  const data = Array.from(spectrumData).slice(10); // 转换为普通数组并处理
+  if (!spectrumData) return;
+  // 转换为普通数组并处理
+  const data = Array.from(spectrumData).slice(10);
   if (!isKeepDrawing.value || !canvasRef.value) return;
   // 设置画布宽度，最大为 1600
   canvasRef.value.width = document.body.clientWidth >= 1600 ? 1600 : document.body.clientWidth;
@@ -99,15 +99,20 @@ const roundRect = (
 };
 
 // 开始绘制频谱
-const { pause: pauseDraw, resume: resumeDraw } = useRafFn(() => {
-  drawSpectrum();
-});
+const { pause: pauseDraw, resume: resumeDraw } = useRafFn(
+  () => {
+    drawSpectrum();
+  },
+  { immediate: false },
+);
 
 onMounted(() => {
+  isKeepDrawing.value = true;
   resumeDraw();
 });
 
 onBeforeUnmount(() => {
+  isKeepDrawing.value = false;
   pauseDraw();
 });
 </script>

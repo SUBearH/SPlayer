@@ -4,7 +4,7 @@ import { useMusicStore, useDataStore, useStatusStore } from "@/stores";
 import { toLikeSong } from "./auth";
 import { usePlayer } from "./player";
 import { cloneDeep } from "lodash-es";
-import { getPlayerInfo } from "./player-utils/song";
+import songManager from "./songManager";
 import { SettingType } from "@/types/main";
 import { handleOrpheusProtocol } from "./orpheusProtocol";
 
@@ -65,7 +65,7 @@ const initIpc = () => {
           "update-desktop-lyric-data",
           cloneDeep({
             playStatus: statusStore.playStatus,
-            playName: getPlayerInfo(),
+            playName: songManager.getPlayerInfo(),
             currentTime: statusStore.currentTime,
             songId: musicStore.playSong?.id,
             songOffset: statusStore.getSongOffset(musicStore.playSong?.id),
