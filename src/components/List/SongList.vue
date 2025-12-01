@@ -48,8 +48,9 @@
               <n-text v-if="type !== 'radio'" class="actions">操作</n-text>
               <n-text v-if="type === 'radio'" class="meta date">更新日期</n-text>
               <n-text v-if="type === 'radio'" class="meta">播放量</n-text>
+              <n-text v-if="showAddTimeColumn" class="meta addTime">加入时间</n-text>
               <n-text class="meta">时长</n-text>
-              <n-text v-if="data?.[0].size && !hiddenSize" class="meta size">大小</n-text>
+              <n-text v-if="showSizeColumn" class="meta size">大小</n-text>
             </div>
           </template>
           <!-- 主内容 -->
@@ -262,6 +263,15 @@ const sortMenuOptions = computed<DropdownOption[]>(() =>
   })),
 );
 
+// 性能优化：缓存表头显示条件，避免每次重新计算
+const showAddTimeColumn = computed(() => {
+  return props.data?.[0]?.addTime && props.type !== 'radio';
+});
+
+const showSizeColumn = computed(() => {
+  return props.data?.[0]?.size && !props.hiddenSize;
+});
+
 // 列表滚动
 const onScroll = (e: Event) => {
   emit("scroll", e);
@@ -400,6 +410,9 @@ onBeforeUnmount(() => {
       }
       &.date {
         width: 80px;
+      }
+      &.addTime {
+        width: 120px;
       }
     }
   }

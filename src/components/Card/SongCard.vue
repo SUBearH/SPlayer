@@ -145,6 +145,10 @@
       <n-text v-if="song.type === 'radio'" class="meta" depth="3">
         {{ formatNumber(song.playCount || 0) }}
       </n-text>
+      <!-- 加入时间 (歌单中) -->
+      <n-text v-if="displayAddTime" class="meta addTime" depth="3">
+        {{ formatTimestamp(song.addTime) }}
+      </n-text>
       <!-- 时长 -->
       <n-text class="meta" depth="3">{{ msToTime(song.duration) }}</n-text>
       <!-- 大小 -->
@@ -278,6 +282,11 @@ const displayCover = computed(() => {
   // 优先使用缓存的图片 Data URL（离线可用）
   const cachedImageUrl = getCachedImageUrl(cover);
   return cachedImageUrl || cover;
+});
+
+// 性能优化：缓存加入时间显示的条件判断
+const displayAddTime = computed(() => {
+  return song.value.addTime && song.value.type !== 'radio';
 });
 </script>
 
@@ -517,6 +526,9 @@ const displayCover = computed(() => {
     }
     &.date {
       width: 80px;
+    }
+    &.addTime {
+      width: 120px;
     }
   }
   &.header {
