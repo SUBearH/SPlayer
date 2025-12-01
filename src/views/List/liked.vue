@@ -293,6 +293,19 @@ const moreOptions = computed<DropdownOption[]>(() => [
     },
     icon: renderIcon("Link"),
   },
+  {
+    label: "链接分享",
+    key: "copy",
+    props: {
+      onClick: () => {
+        const link = `https://music.163.com/#/playlist?id=${playlistId.value}`;
+        navigator.clipboard.writeText(link).then(() => {
+          window.$message.success("已复制分享链接");
+        });
+      },
+    },
+    icon: renderIcon("Copy"),
+  },
 ]);
 
 // 从服务器获取指定数量的歌曲（通过 API 或分页）
