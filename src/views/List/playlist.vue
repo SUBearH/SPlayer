@@ -328,16 +328,6 @@ const moreOptions = computed<DropdownOption[]>(() => [
     icon: renderIcon("Batch"),
   },
   {
-    label: "打开源页面",
-    key: "open",
-    props: {
-      onClick: () => {
-        window.open(`https://music.163.com/#/playlist?id=${playlistId.value}`);
-      },
-    },
-    icon: renderIcon("Link"),
-  },
-  {
     label: "链接分享",
     key: "copy",
     props: {
@@ -349,6 +339,16 @@ const moreOptions = computed<DropdownOption[]>(() => [
       },
     },
     icon: renderIcon("Copy"),
+  },
+  {
+    label: "打开源页面",
+    key: "open",
+    props: {
+      onClick: () => {
+        window.open(`https://music.163.com/#/playlist?id=${playlistId.value}`);
+      },
+    },
+    icon: renderIcon("Link"),
   },
 ]);
 
