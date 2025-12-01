@@ -6,6 +6,7 @@ import { usePlayer } from "./player";
 import { cloneDeep } from "lodash-es";
 import { getPlayerInfo } from "./player-utils/song";
 import { SettingType } from "@/types/main";
+import { handleOrpheusProtocol } from "./orpheusProtocol";
 
 // 关闭更新状态
 const closeUpdateStatus = () => {
@@ -18,6 +19,15 @@ const initIpc = () => {
   try {
     if (!isElectron) return;
     const player = usePlayer();
+
+    // 通知主进程前端已就绪
+    window.electron.ipcRenderer.send("frontend-ready");
+
+    // 处理 orpheus:// 协议
+    window.electron.ipcRenderer.on("handle-orpheus-protocol", (_, orpheusData) => {
+      handleOrpheusProtocol(orpheusData);
+    });
+
     // 播放
     window.electron.ipcRenderer.on("play", () => player.play());
     // 暂停

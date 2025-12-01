@@ -32,6 +32,13 @@ const config: Configuration = {
     artifactName: "${productName}-${version}-${arch}.${ext}",
     // 是否对可执行文件进行签名和编辑
     // signAndEditExecutable: false,
+    // 注册自定义协议处理
+    protocols: [
+      {
+        name: "Orpheus Music Protocol",
+        schemes: ["orpheus"],
+      },
+    ],
     // 构建类型（架构由命令行参数 --x64 或 --arm64 指定）
     target: [
       // 安装版
@@ -77,6 +84,13 @@ const config: Configuration = {
     entitlementsInherit: "build/entitlements.mac.plist",
     // macOS 平台全局文件名模板
     artifactName: "${productName}-${version}-${arch}.${ext}",
+    // 注册自定义协议处理
+    protocols: [
+      {
+        name: "Orpheus Music Protocol",
+        schemes: ["orpheus"],
+      },
+    ],
     // 扩展信息，如权限描述
     extendInfo: {
       NSCameraUsageDescription: "Application requests access to the device's camera.",
@@ -111,6 +125,13 @@ const config: Configuration = {
     icon: "public/icons/favicon-512x512.png",
     // Linux 所有格式的统一文件名模板
     artifactName: "${name}-${version}-${arch}.${ext}",
+    // 注册自定义协议处理
+    protocols: [
+      {
+        name: "Orpheus Music Protocol",
+        schemes: ["orpheus"],
+      },
+    ],
     // 构建类型 - 支持 x64 和 ARM64 架构
     target: [
       // Pacman 包管理器
