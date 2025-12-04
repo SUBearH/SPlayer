@@ -147,7 +147,7 @@
       </n-text>
       <!-- 加入时间 (歌单中) -->
       <n-text v-if="displayAddTime" class="meta addTime" depth="3">
-        {{ formatTimestamp(song.addTime) }}
+        {{ formattedAddTime }}
       </n-text>
       <!-- 时长 -->
       <n-text class="meta" depth="3">{{ msToTime(song.duration) }}</n-text>
@@ -287,6 +287,17 @@ const displayCover = computed(() => {
 // 性能优化：缓存加入时间显示的条件判断
 const displayAddTime = computed(() => {
   return song.value.addTime && song.value.type !== 'radio';
+});
+
+// 格式化加入时间（根据状态切换显示格式）
+const formattedAddTime = computed(() => {
+  if (!song.value.addTime) return "";
+  if (statusStore.addTimeFormat === "full") {
+    return formatTimestamp(song.value.addTime, "YYYY-MM-DD HH:mm");
+  } else {
+    // short 格式：(YYYY-)MM-DD，当年份相同时自动去掉年份
+    return formatTimestamp(song.value.addTime, "YYYY-MM-DD").split(" ")[0];
+  }
 });
 </script>
 

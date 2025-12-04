@@ -217,6 +217,8 @@ let lastSyncedCacheVersion = -1;
 // 歌单数据
 const playlistData = shallowRef<SongType[]>([]);
 const playlistDetailData = ref<CoverType | null>(null);
+// trackIds 映射表，用于获取歌曲加入时间
+const trackIdsMap = shallowRef<Map<number, { at: number }>>(new Map());
 
 // 模糊搜索数据
 const searchValue = ref<string>("");
@@ -315,7 +317,7 @@ const fetchSongsFromServer = async (
   if (isLogin() === 1 && limit < 1500) {
     const ids: number[] = privileges.slice(0, limit).map((song: any) => song.id as number);
     const result = await songDetail(ids);
-    return formatSongsList(result.songs);
+    return formatSongsList(result.songs, trackIdsMap.value);
   } else {
     return await getPlaylistAllSongsData(playlistId.value, limit);
   }
@@ -323,15 +325,22 @@ const fetchSongsFromServer = async (
 
 // 更新播放列表数据到 UI 和全局状态
 const updatePlaylistUI = (songs: SongType[]) => {
-  playlistData.value = uniqBy(songs, "id");
+  // 为缺失 addTime 的歌曲补充加入时间（处理旧缓存数据）
+  // addTime 是固定值，歌曲一旦加入列表就不会改变
+  const enrichedSongs = songs.map((song) => {
+    if (!song.addTime && trackIdsMap.value.has(song.id)) {
+      song.addTime = trackIdsMap.value.get(song.id)?.at;
+    }
+    return song;
+  });
+
+  playlistData.value = uniqBy(enrichedSongs, "id");
   const likedSongIds = playlistData.value.map((song) => song.id);
   dataStore.setUserLikeData("songs", likedSongIds);
   if (playlistDetailData.value) {
     dataStore.setLikeSongsList(playlistDetailData.value, playlistData.value);
   }
-};
-
-// 获取歌单基础信息
+};// 获取歌单基础信息
 const getPlaylistDetail = async (
   id: number,
   options: {
@@ -378,6 +387,19 @@ const getPlaylistData = async (
   playlistDetailData.value = formatCoverList(detail.playlist)[0];
   setCachedLikedListDetail(playlistDetailData.value);
 
+  // 构建 trackIds 映射表，用于获取歌曲加入时间
+  if (detail.playlist?.trackIds?.length) {
+    const newMap = new Map<number, { at: number }>();
+    for (const trackInfo of detail.playlist.trackIds) {
+      if (trackInfo?.id && trackInfo?.at) {
+        newMap.set(trackInfo.id, { at: trackInfo.at });
+      }
+    }
+    trackIdsMap.value = newMap;
+  } else {
+    trackIdsMap.value = new Map();
+  }
+
   // 不需要获取列表或无歌曲
   if (!getList || playlistDetailData.value.count === 0) {
     loading.value = false;
@@ -401,23 +423,23 @@ const getPlaylistData = async (
     updatePlaylistUI(getCachedLikedSongs());
     lastSyncedCacheVersion = getCacheVersion();
   } else {
-    // 【分支3】有缓存：获取前200首对比是否需要全量刷新
+    // 【分支3】有缓存：使用 /likelist 返回的 ID 列表对比，避免第三个请求
 
     // 步骤1：检查UI是否与缓存同步
     if (playlistData.value.length !== cachedSongs.length) {
       updatePlaylistUI(cachedSongs);
     }
 
-    // 步骤2：从服务器获取前200首进行对比
-    // 关键：新歌曲总是 unshift 到最前面，所以前200首包含所有最新的修改
-    const server200Songs = await fetchSongsFromServer(200, detail.privileges);
-    const cached200Songs = cachedSongs.slice(0, 200);
+    // 步骤2：对比 /likelist 返回的 ID 列表与缓存 ID 列表
+    // userLikeData.songs 来自第一个请求 (/likelist)，包含用户所有喜欢歌曲的 ID
+    const serverLikeIds = dataStore.userLikeData.songs || [];
+    const cachedIds = cachedSongs.map((song) => song.id);
 
-    // 对比ID序列：如果相同说明没有其他客户端修改
+    // 对比 ID 序列：如果相同说明没有其他客户端修改
     let isConsistent = true;
-    if (server200Songs.length === cached200Songs.length) {
-      for (let i = 0; i < server200Songs.length; i++) {
-        if (server200Songs[i].id !== cached200Songs[i].id) {
+    if (serverLikeIds.length === cachedIds.length) {
+      for (let i = 0; i < serverLikeIds.length; i++) {
+        if (serverLikeIds[i] !== cachedIds[i]) {
           isConsistent = false;
           break;
         }
@@ -426,8 +448,10 @@ const getPlaylistData = async (
       isConsistent = false;
     }
 
-    // 如果服务器与缓存前200首不一致，进行全量更新
+    // 如果 /likelist 与缓存一致，无需进行第三个请求
+    // 直接使用缓存数据；否则进行全量更新
     if (!isConsistent) {
+      // 需要进行全量更新：获取完整歌曲详情
       const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
       incrementUpdateLikedSongs(allSongs, true);
       updatePlaylistUI(getCachedLikedSongs());
@@ -450,7 +474,7 @@ const getPlaylistAllSongsData = async (
 
   do {
     const result = await playlistAllSongs(id, limit, offset);
-    const songData = formatSongsList(result.songs);
+    const songData = formatSongsList(result.songs, trackIdsMap.value);
     allSongs.push(...songData);
 
     // 更新偏移
@@ -527,23 +551,28 @@ onActivated(() => {
     isActivated.value = true;
   } else {
     // 再次进入页面时（从其他页面返回）：
-    // 1. 同步喜欢状态确保按钮UI正确
-    updateUserLikeSongs().catch((error) => {
-      console.error("Failed to sync like songs:", error);
-    });
+    // 必须等待 updateUserLikeSongs() 完成后再进行后续操作
+    (async () => {
+      try {
+        // 1. 先同步喜欢状态，获取最新的 /likelist 数据
+        await updateUserLikeSongs();
 
-    // 2. 如果缓存有变化，立即从缓存更新UI
-    if (lastSyncedCacheVersion !== -1 && hasCacheChangedSince(lastSyncedCacheVersion)) {
-      // 缓存确实有变化（版本号不同）
-      updatePlaylistUI(getCachedLikedSongs());
-    }
+        // 2. 如果缓存有变化，立即从缓存更新UI
+        if (lastSyncedCacheVersion !== -1 && hasCacheChangedSince(lastSyncedCacheVersion)) {
+          updatePlaylistUI(getCachedLikedSongs());
+        }
 
-    // 3. 然后执行正常的数据同步流程（检查总数、对比服务器等）
-    getPlaylistDetail(playlistId.value, {
-      getList: true,
-      refresh: false,
-      fullUpdate: false,
-    });
+        // 3. 此时 dataStore.userLikeData.songs 已是最新数据
+        // 然后执行正常的数据同步流程（ID对比、决定是否需要第三个请求）
+        getPlaylistDetail(playlistId.value, {
+          getList: true,
+          refresh: false,
+          fullUpdate: false,
+        });
+      } catch (error) {
+        console.error("Failed to sync data on page return:", error);
+      }
+    })();
   }
 });
 
@@ -573,7 +602,7 @@ onMounted(async () => {
   const likedPlaylistId = dataStore.userLikeData.playlists?.[0]?.id;
   if (likedPlaylistId) {
     // 首次加载：使用对比逻辑
-    // refresh=false 启用对比逻辑：对比前200首，决定是否全量刷新
+    // 此时若本地有缓存，直接使用缓存的 ID 进行对比
     getPlaylistDetail(likedPlaylistId, {
       getList: true,
       refresh: false,

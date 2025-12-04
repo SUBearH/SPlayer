@@ -48,7 +48,7 @@
               <n-text v-if="type !== 'radio'" class="actions">操作</n-text>
               <n-text v-if="type === 'radio'" class="meta date">更新日期</n-text>
               <n-text v-if="type === 'radio'" class="meta">播放量</n-text>
-              <n-text v-if="showAddTimeColumn" class="meta addTime">加入时间</n-text>
+              <n-text v-if="showAddTimeColumn" class="meta addTime" @click.stop="toggleAddTimeFormat">加入时间</n-text>
               <n-text class="meta">时长</n-text>
               <n-text v-if="showSizeColumn" class="meta size">大小</n-text>
             </div>
@@ -301,6 +301,11 @@ const sortSelect = (key: SortType) => {
   listRef.value?.scrollToIndex(hasPlaySong.value || 0);
 };
 
+// 切换加入时间显示格式
+const toggleAddTimeFormat = () => {
+  statusStore.addTimeFormat = statusStore.addTimeFormat === "full" ? "short" : "full";
+};
+
 // 删除指定索引
 const removeSong = (id: number[]) => emit("removeSong", id);
 
@@ -413,6 +418,7 @@ onBeforeUnmount(() => {
       }
       &.addTime {
         width: 120px;
+        cursor: pointer;
       }
     }
   }
