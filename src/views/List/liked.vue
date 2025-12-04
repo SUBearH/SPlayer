@@ -432,24 +432,22 @@ const getPlaylistData = async (
 
     // 步骤2：对比 /likelist 返回的 ID 列表与缓存 ID 列表
     // userLikeData.songs 来自第一个请求 (/likelist)，包含用户所有喜欢歌曲的 ID
-    const serverLikeIds = dataStore.userLikeData.songs || [];
-    const cachedIds = cachedSongs.map((song) => song.id);
+    // 注意：ID 列表的顺序可能不同，所以使用 Set 对比而不是顺序对比
+    const serverLikeIds = new Set(dataStore.userLikeData.songs || []);
+    const cachedIds = new Set(cachedSongs.map((song) => song.id));
 
-    // 对比 ID 序列：如果相同说明没有其他客户端修改
-    let isConsistent = true;
-    if (serverLikeIds.length === cachedIds.length) {
-      for (let i = 0; i < serverLikeIds.length; i++) {
-        if (serverLikeIds[i] !== cachedIds[i]) {
+    // 对比 ID 集合：如果内容相同说明没有其他客户端修改
+    let isConsistent = serverLikeIds.size === cachedIds.size;
+    if (isConsistent) {
+      for (const id of serverLikeIds) {
+        if (!cachedIds.has(id)) {
           isConsistent = false;
           break;
         }
       }
-    } else {
-      isConsistent = false;
     }
 
-    // 如果 /likelist 与缓存一致，无需进行第三个请求
-    // 直接使用缓存数据；否则进行全量更新
+    // 如果 /likelist 与缓存不一致，需要进行全量更新
     if (!isConsistent) {
       // 需要进行全量更新：获取完整歌曲详情
       const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
