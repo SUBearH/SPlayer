@@ -478,13 +478,18 @@ const loadingMsgShow = (show: boolean = true, count?: number) => {
 // 播放全部歌曲
 const playAllSongs = debounce(() => {
   if (!playlistDetailData.value || !playlistData.value?.length) return;
-  player.updatePlayList(playlistData.value, undefined, playlistId.value);
+  // 如果有搜索结果，播放搜索结果；否则播放完整列表
+  const listToPlay = searchValue.value && searchData.value?.length ? searchData.value : playlistData.value;
+  player.updatePlayList(listToPlay, undefined, playlistId.value);
 }, 300);
 
 // 模糊搜索
 const listSearch = debounce((val: string) => {
   val = val.trim();
-  if (!val || val === "") return;
+  if (!val || val === "") {
+    searchData.value = [];
+    return;
+  }
   // 获取搜索结果
   const result = fuzzySearch(val, playlistData.value);
   searchData.value = result;
