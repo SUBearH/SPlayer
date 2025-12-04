@@ -187,7 +187,7 @@ import { formatCoverList, formatSongsList } from "@/utils/format";
 import { coverLoaded, formatNumber, fuzzySearch, renderIcon, copyData } from "@/utils/helper";
 import { renderToolbar } from "@/utils/meta";
 import { debounce, uniqBy } from "lodash-es";
-import { useDataStore, useStatusStore, useSettingStore } from "@/stores";
+import { useDataStore, useStatusStore, useSettingStore, useMusicStore } from "@/stores";
 import { openBatchList, openDescModal, openUpdatePlaylist } from "@/utils/modal";
 import { formatTimestamp } from "@/utils/time";
 import { isLogin, updateUserLikePlaylist, updateUserLikeSongs, toLikeSong } from "@/utils/auth";
@@ -197,8 +197,9 @@ import {
   getCachedLikedSongs,
   setCachedLikedListDetail,
   incrementUpdateLikedSongs,
-  getCacheVersion,
+  getCacheVersionRef,
   hasCacheChangedSince,
+  onCacheChange,
 } from "@/utils/likedListCache";
 
 const router = useRouter();
@@ -340,6 +341,16 @@ const updatePlaylistUI = (songs: SongType[]) => {
   if (playlistDetailData.value) {
     dataStore.setLikeSongsList(playlistDetailData.value, playlistData.value);
   }
+
+  // 同步播放器 UI：如果当前播放的歌曲在喜欢列表中，更新其信息
+  const musicStore = useMusicStore();
+  if (musicStore.playSong?.id) {
+    const updatedSong = playlistData.value.find((s) => s.id === musicStore.playSong.id);
+    if (updatedSong) {
+      // 更新播放器中的歌曲信息（保留当前播放状态，只更新数据）
+      Object.assign(musicStore.playSong, updatedSong);
+    }
+  }
 };// 获取歌单基础信息
 const getPlaylistDetail = async (
   id: number,
@@ -415,13 +426,13 @@ const getPlaylistData = async (
     const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
     incrementUpdateLikedSongs(allSongs, true);
     updatePlaylistUI(getCachedLikedSongs());
-    lastSyncedCacheVersion = getCacheVersion();
+    lastSyncedCacheVersion = getCacheVersionRef().value;
   } else if (!hasCachedData) {
     // 【分支2】首次加载（无缓存）：从服务器获取全部并建立缓存
     const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
     incrementUpdateLikedSongs(allSongs, true);
     updatePlaylistUI(getCachedLikedSongs());
-    lastSyncedCacheVersion = getCacheVersion();
+    lastSyncedCacheVersion = getCacheVersionRef().value;
   } else {
     // 【分支3】有缓存：使用 /likelist 返回的 ID 列表对比，避免第三个请求
 
@@ -456,7 +467,7 @@ const getPlaylistData = async (
     }
 
     // 同步完成后更新版本号
-    lastSyncedCacheVersion = getCacheVersion();
+    lastSyncedCacheVersion = getCacheVersionRef().value;
   }  loading.value = false;
 };
 
@@ -541,6 +552,14 @@ const removeSong = (ids: number[]) => {
 
   // 从 UI 列表中立即删除（不等待 API 响应）
   playlistData.value = playlistData.value.filter((song) => !ids.includes(song.id));
+
+  // 更新歌单详情中的歌曲数量
+  if (playlistDetailData.value) {
+    playlistDetailData.value.count = Math.max(0, (playlistDetailData.value.count || 0) - ids.length);
+  }
+
+  // 同步更新全局状态中的数据
+  updatePlaylistUI(playlistData.value);
 };
 
 onActivated(() => {
@@ -574,12 +593,35 @@ onActivated(() => {
   }
 });
 
+// 监听缓存变化，当在其他页面喜欢歌曲时实时更新
+let unsubscribeFromCacheChanges: (() => void) | null = null;
+
+// 监听缓存变化
+const watchCacheChanges = () => {
+  unsubscribeFromCacheChanges = onCacheChange(() => {
+    // 只在页面处于活跃状态时更新
+    if (!isActivated.value) return;
+
+    const cachedSongs = getCachedLikedSongs();
+    if (cachedSongs.length > 0) {
+      updatePlaylistUI(cachedSongs);
+    }
+  });
+};
+
+// 启动监听
+watchCacheChanges();
+
 onDeactivated(() => {
   loadingMsgShow(false);
   saveLikedListCache();
 });
 
 onUnmounted(() => {
+  // 清理缓存监听
+  if (unsubscribeFromCacheChanges) {
+    unsubscribeFromCacheChanges();
+  }
   loadingMsgShow(false);
   saveLikedListCache();
 });

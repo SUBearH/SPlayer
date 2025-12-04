@@ -1,5 +1,6 @@
 // 我喜欢的音乐列表缓存管理
 import type { SongType, CoverType } from "@/types/main";
+import { ref } from "vue";
 
 interface LikedListCache {
   detail?: CoverType; // 歌单详情
@@ -10,10 +11,14 @@ interface LikedListCache {
 
 const CACHE_STORAGE_KEY = "splayer_liked_list_cache";
 let cacheVersion = 0; // 内存版本号，用于快速检测缓存变化
+const cacheVersionRef = ref(0); // 响应式版本号
 const likedListCache: LikedListCache = {
   songs: [],
   version: 0,
 };
+
+// 缓存变化的回调函数列表
+const changeCallbacks: Set<(version: number) => void> = new Set();
 
 /**
  * 初始化缓存，从本地存储加载
@@ -107,7 +112,11 @@ export function getCacheVersion(): number {
  */
 export function markCacheModified(): void {
   cacheVersion++;
+  cacheVersionRef.value = cacheVersion;
   likedListCache.version = cacheVersion;
+
+  // 触发所有已注册的回调
+  changeCallbacks.forEach(callback => callback(cacheVersion));
 }
 
 /**
@@ -117,6 +126,26 @@ export function markCacheModified(): void {
  */
 export function hasCacheChangedSince(lastSyncVersion: number): boolean {
   return cacheVersion !== lastSyncVersion;
+}
+
+/**
+ * 获取响应式缓存版本号（用于 Vue 响应性）
+ */
+export function getCacheVersionRef() {
+  return cacheVersionRef;
+}
+
+/**
+ * 监听缓存变化
+ * @param callback 缓存变化时的回调函数
+ * @returns 取消监听函数
+ */
+export function onCacheChange(callback: (version: number) => void): () => void {
+  changeCallbacks.add(callback);
+  // 返回取消监听函数
+  return () => {
+    changeCallbacks.delete(callback);
+  };
 }
 
 /**

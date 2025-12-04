@@ -219,8 +219,9 @@ export const toLikeSong = debounce(
       // 乐观更新本地状态
       if (like) {
         likeList.push(id);
-        // ✨ 新增：将完整歌曲对象写入缓存
-        addLikedSong(song);
+        // ✨ 新增：将完整歌曲对象写入缓存，并设置加入时间戳
+        const songWithAddTime = { ...song, addTime: Date.now() };
+        addLikedSong(songWithAddTime);
         saveLikedListCache();
         window.$message.success("已添加到我喜欢的音乐");
       } else {
