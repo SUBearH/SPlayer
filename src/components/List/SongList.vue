@@ -419,6 +419,16 @@ onBeforeUnmount(() => {
       &.addTime {
         width: 120px;
         cursor: pointer;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 0;
+        transition: background-color 0.3s;
+        border-radius: 8px;
+        &:hover {
+          background-color: rgba(var(--primary), 0.08);
+        }
       }
     }
   }

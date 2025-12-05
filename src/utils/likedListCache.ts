@@ -18,7 +18,8 @@ const likedListCache: LikedListCache = {
 };
 
 // 缓存变化的回调函数列表
-const changeCallbacks: Set<(version: number) => void> = new Set();
+type CacheChangeCallback = (version: number, changeType: 'add' | 'remove' | 'refresh') => void;
+const changeCallbacks: Set<CacheChangeCallback> = new Set();
 
 /**
  * 初始化缓存，从本地存储加载
@@ -88,7 +89,8 @@ export function incrementUpdateLikedSongs(newSongs: SongType[], isRefresh: boole
   }
 
   likedListCache.lastUpdateTime = Date.now();
-  markCacheModified(); // ✨ 标记缓存已修改
+  // 根据是否为刷新操作传递不同的类型
+  markCacheModified(isRefresh ? 'refresh' : 'refresh');
   return result;
 }
 
@@ -109,17 +111,16 @@ export function getCacheVersion(): number {
 
 /**
  * 标记缓存已修改，增加版本号
+ * @param changeType 变化类型：'add' 添加歌曲，'remove' 删除歌曲，'refresh' 刷新/全量更新
  */
-export function markCacheModified(): void {
+export function markCacheModified(changeType: 'add' | 'remove' | 'refresh' = 'refresh'): void {
   cacheVersion++;
   cacheVersionRef.value = cacheVersion;
   likedListCache.version = cacheVersion;
 
-  // 触发所有已注册的回调
-  changeCallbacks.forEach(callback => callback(cacheVersion));
-}
-
-/**
+  // 触发所有已注册的回调，传递操作类型
+  changeCallbacks.forEach(callback => callback(cacheVersion, changeType));
+}/**
  * 检查缓存自指定版本以来是否有变化
  * @param lastSyncVersion 上次同步时的版本号
  * @returns true 表示缓存有变化，false 表示没有变化
@@ -137,10 +138,10 @@ export function getCacheVersionRef() {
 
 /**
  * 监听缓存变化
- * @param callback 缓存变化时的回调函数
+ * @param callback 缓存变化时的回调函数，参数：(version, changeType) changeType 为 'add'|'remove'|'refresh'
  * @returns 取消监听函数
  */
-export function onCacheChange(callback: (version: number) => void): () => void {
+export function onCacheChange(callback: CacheChangeCallback): () => void {
   changeCallbacks.add(callback);
   // 返回取消监听函数
   return () => {
@@ -187,7 +188,7 @@ export function addLikedSong(song: SongType): void {
   }
 
   likedListCache.lastUpdateTime = Date.now();
-  markCacheModified(); // ✨ 标记缓存已修改
+  markCacheModified('add'); // ✨ 标记为添加操作
 }
 
 /**
@@ -196,7 +197,7 @@ export function addLikedSong(song: SongType): void {
 export function removeLikedSong(ids: number[]): void {
   const idSet = new Set(ids);
   likedListCache.songs = likedListCache.songs.filter(s => !idSet.has(s.id));
-  markCacheModified(); // ✨ 标记缓存已修改
+  markCacheModified('remove'); // ✨ 标记为删除操作
 }
 
 /**

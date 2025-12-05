@@ -598,9 +598,12 @@ let unsubscribeFromCacheChanges: (() => void) | null = null;
 
 // 监听缓存变化
 const watchCacheChanges = () => {
-  unsubscribeFromCacheChanges = onCacheChange(() => {
+  unsubscribeFromCacheChanges = onCacheChange((_, changeType) => {
     // 只在页面处于活跃状态时更新
     if (!isActivated.value) return;
+
+    // 只在添加歌曲时更新 UI，删除操作不触发更新
+    if (changeType !== 'add') return;
 
     const cachedSongs = getCachedLikedSongs();
     if (cachedSongs.length > 0) {
