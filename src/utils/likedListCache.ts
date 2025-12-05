@@ -90,7 +90,7 @@ export function incrementUpdateLikedSongs(newSongs: SongType[], isRefresh: boole
 
   likedListCache.lastUpdateTime = Date.now();
   // 根据是否为刷新操作传递不同的类型
-  markCacheModified(isRefresh ? 'refresh' : 'refresh');
+  markCacheModified(isRefresh ? 'refresh' : 'add');
   return result;
 }
 
