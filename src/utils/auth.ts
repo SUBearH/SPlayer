@@ -365,7 +365,10 @@ const setUserLikeDataLoop = async <T>(
     } catch (error) {
       console.error(`Error fetching ${key} data at offset ${offset}:`, error);
       break;
-if (key === "artists") {
+    }
+  }
+
+  if (key === "artists") {
   dataStore.setUserLikeData(key, allData as ArtistType[]);
 } else if (key === "playlists" || key === "albums" || key === "mvs" || key === "djs") {
   dataStore.setUserLikeData(key, allData as CoverType[]);
