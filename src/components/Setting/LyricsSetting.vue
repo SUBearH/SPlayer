@@ -260,6 +260,17 @@
         </div>
         <n-switch v-model:value="settingStore.enableTTMLLyric" class="set" :round="false" />
       </n-card>
+      <n-collapse-transition :show="settingStore.enableTTMLLyric">
+        <n-card class="set-item">
+          <div class="label">
+            <n-text class="name">AMLL TTML DB 地址</n-text>
+            <n-text class="tip" :depth="3">
+              AMLL TTML DB 地址，请确保地址正确，否则将导致歌词获取失败
+            </n-text>
+          </div>
+          <n-button type="primary" strong secondary @click="openAMLLServer"> 配置 </n-button>
+        </n-card>
+      </n-collapse-transition>
       <n-card class="set-item">
         <div class="label">
           <n-text class="name">启用歌词排除</n-text>
@@ -538,10 +549,11 @@
 </template>
 
 <script setup lang="ts">
+import { NFlex, NText } from "naive-ui";
 import { useSettingStore, useStatusStore } from "@/stores";
 import { cloneDeep, isEqual } from "lodash-es";
 import { isElectron } from "@/utils/env";
-import { openLyricExclude } from "@/utils/modal";
+import { openLyricExclude, openAMLLServer } from "@/utils/modal";
 import { LyricConfig } from "@/types/desktop-lyric";
 import { usePlayer } from "@/utils/player";
 import { SelectOption } from "naive-ui";
@@ -637,7 +649,7 @@ const getAllSystemFonts = async () => {
   });
 };
 
-onMounted(() => {
+onMounted(async () => {
   if (isElectron) {
     getDesktopLyricConfig();
     getAllSystemFonts();

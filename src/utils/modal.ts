@@ -23,7 +23,8 @@ import Equalizer from "@/components/Modal/Equalizer.vue";
 import SongUnlockManager from "@/components/Modal/SongUnlockManager.vue";
 import SidebarHideManager from "@/components/Modal/SidebarHideManager.vue";
 import HomePageSectionManager from "@/components/Modal/HomePageSectionManager.vue";
-import { NScrollbar } from "naive-ui";
+import CopyLyrics from "@/components/Modal/CopyLyrics.vue";
+import AMLLServer from "@/components/Modal/AMLLServer.vue";
 
 // 用户协议
 export const openUserAgreement = () => {
@@ -361,6 +362,38 @@ export const openHomePageSectionManager = () => {
     title: "首页栏目配置",
     content: () => {
       return h(HomePageSectionManager);
+    },
+  });
+};
+
+/** 打开复制歌词弹窗 */
+export const openCopyLyrics = () => {
+  const modal = window.$modal.create({
+    preset: "card",
+    transformOrigin: "center",
+    autoFocus: false,
+    style: { width: "500px" },
+    title: "复制歌词",
+    content: () => {
+      return h(CopyLyrics, {
+        onClose: () => modal.destroy(),
+      });
+    },
+  });
+};
+
+/** 打开 AMLL 服务器配置弹窗 */
+export const openAMLLServer = () => {
+  const modal = window.$modal.create({
+    preset: "card",
+    transformOrigin: "center",
+    autoFocus: false,
+    style: { width: "600px" },
+    title: "AMLL TTML DB 服务器配置",
+    content: () => {
+      return h(AMLLServer, {
+        onClose: () => modal.destroy(),
+      });
     },
   });
 };

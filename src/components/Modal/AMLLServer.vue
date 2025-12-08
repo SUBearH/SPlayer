@@ -1,34 +1,28 @@
 <template>
   <n-flex vertical size="large">
     <n-alert :show-icon="false" type="warning">
-      如果你不清楚这里是做什么的，请不要修改，或仅使用推荐服务器
+      如果你不清楚这里是做什么的，请不要修改
     </n-alert>
 
-    <n-text>
-      请确保地址正确，并且包含 <span class="replace-part">%s</span>（ 用于替换歌曲 ID ）
-    </n-text>
+    <n-text>请确保地址正确，并且包含 %s（ 用于替换歌曲 ID ）</n-text>
 
     <n-input
       v-model:value="serverUrl"
-      :status="inputStatus"
-      :allow-input="noSideSpace"
       placeholder="请输入 AMLL TTML DB 地址"
     />
 
-    <n-collapse class="servers-collapse">
-      <n-collapse-item title="推荐服务器" name="servers">
+    <n-collapse class="mirrors-collapse">
+      <n-collapse-item title="推荐服务器" name="mirrors">
         <n-flex vertical size="medium">
           <n-card
-            v-for="server in amllDbServers"
-            :key="server.value"
-            size="small"
-            hoverable
-            @click="selectServer(server.value)"
+            v-for="mirror in amllDbServers"
+            :key="mirror.value"
+            @click="serverUrl = mirror.value"
           >
             <n-flex vertical size="small">
-              <n-text>{{ server.label }}</n-text>
-              <n-text depth="3">{{ server.description }}</n-text>
-              <n-text depth="3" class="server-url" v-html="renderHighlight(server.value)" />
+              <n-text>{{ mirror.label }}</n-text>
+              <n-text depth="3">{{ mirror.description }}</n-text>
+              <n-text depth="3" class="mirror-url">{{ mirror.value }}</n-text>
             </n-flex>
           </n-card>
         </n-flex>
@@ -43,7 +37,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref } from "vue";
+import { NAlert, NText, NInput, NButton, NFlex, NCollapse, NCollapseItem, NCard } from "naive-ui";
 import { isValidURL } from "@/utils/validate";
 import { amllDbServers } from "@/utils/meta";
 import { useSettingStore } from "@/stores";
@@ -52,76 +47,45 @@ const props = defineProps<{ onClose: () => void }>();
 
 const settingStore = useSettingStore();
 const serverUrl = ref(settingStore.amllDbServer);
-const inputStatus = ref<"success" | "error" | "warning">("success");
 
-const noSideSpace = (value: string) => value.trim() === value;
-
-const isValidServer = (url: string) => isValidURL(url) && url.includes("%s");
-
-/**
- * 渲染高亮
- * @param text 文本
- * @returns 高亮文本
- */
-const renderHighlight = (text: string): string => {
-  return text.replace("%s", "<span class='replace-part'>%s</span>");
-};
-
-// 点击确认
 const handleConfirm = async () => {
-  const url = serverUrl.value;
+  const urlValue = serverUrl.value.trim();
   // 验证 URL 格式和 %s
-  if (isValidServer(url)) {
-    await window.api.store.set("amllDbServer", url);
-    settingStore.amllDbServer = url;
+  if (isValidURL(urlValue) && urlValue.includes("%s")) {
+    await window.api.store.set("amllDbServer", urlValue);
+    settingStore.amllDbServer = urlValue;
     window.$message.success("AMLL TTML DB 地址已更新");
     props.onClose();
+    return true;
   } else {
     window.$message.error("请输入正确的网址格式，需包含 %s");
+    return false;
   }
-};
-
-// 输入变动时向输入框反馈
-watch(serverUrl, (url: string) => {
-  inputStatus.value = isValidServer(url) ? "success" : "error";
-});
-
-/**
- * 选择服务器
- * @param url 服务器 URL
- */
-const selectServer = (url: string) => {
-  serverUrl.value = url;
-  inputStatus.value = "success";
-  useTimeoutFn(() => {
-    inputStatus.value = isValidServer(url) ? "success" : "error";
-  }, 300);
 };
 </script>
 
 <style scoped lang="scss">
-.servers-collapse {
-  .n-card {
-    cursor: pointer;
-    &:hover {
-      border-color: rgba(var(--primary), 0.58);
-    }
+.n-card {
+  cursor: pointer;
+  transition: border-color 0.3s;
+
+  &:hover {
+    border-color: rgba(var(--primary), 0.58);
   }
-  .server-url {
-    font-size: 12px;
+}
+
+.mirrors-collapse {
+  margin-top: 10px;
+
+  .mirror-url {
+    font-size: 11px;
+    color: var(--n-text-color-3);
     margin-top: 4px;
     padding: 4px 8px;
     background: var(--n-code-color);
     border-radius: 4px;
+    font-family: monospace;
     word-break: break-all;
-
-    :deep(.replace-part) {
-      color: var(--n-color-target);
-    }
   }
-}
-
-.replace-part {
-  color: var(--n-color-target);
 }
 </style>
