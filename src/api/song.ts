@@ -1,5 +1,5 @@
 import { isElectron } from "@/utils/env";
-import { songLevelData } from "@/utils/meta";
+import { defaultAMLLDbServer, songLevelData } from "@/utils/meta";
 import { SongUnlockServer } from "@/utils/songManager";
 import request from "@/utils/request";
 
@@ -76,7 +76,9 @@ export const songLyricTTML = async (id: number) => {
   if (isElectron) {
     return request({ url: "/lyric/ttml", params: { id, noCookie: true } });
   } else {
-    const url = `https://amll-ttml-db.stevexmh.net/ncm/${id}`;
+    const settingStore = useSettingStore();
+    const server = settingStore.amllDbServer || defaultAMLLDbServer;
+    const url = server.replace("%s", String(id));
     try {
       const response = await fetch(url);
       if (response === null || response.status !== 200) {

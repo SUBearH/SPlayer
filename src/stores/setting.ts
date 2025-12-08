@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { keywords, regexes } from "@/assets/data/exclude";
 import { SongUnlockServer } from "@/utils/songManager";
+import type { SongLevelType } from "@/types/main";
 import { defaultAMLLDbServer } from "@/utils/meta";
 
 export interface SettingState {
@@ -279,7 +280,7 @@ export const useSettingStore = defineStore("setting", {
     lyricFontBold: true,
     useAMLyrics: false,
     useAMSpring: false,
-    enableTTMLLyric: false,
+    enableTTMLLyric: true,
     amllDbServer: defaultAMLLDbServer,
     showYrc: true,
     showYrcAnimation: true,
