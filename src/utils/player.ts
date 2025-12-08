@@ -818,7 +818,12 @@ class Player {
     data: SongType[],
     song?: SongType,
     pid?: number,
-    options: { showTip?: boolean; scrobble?: boolean; play?: boolean } = {
+    options: {
+      showTip?: boolean;
+      scrobble?: boolean;
+      play?: boolean;
+      keepHeartbeatMode?: boolean;
+    } = {
       showTip: true,
       scrobble: true,
       play: true,
@@ -841,7 +846,9 @@ class Player {
     // 更新列表
     await dataStore.setPlayList(processedData);
     // 关闭特殊模式
-    if (statusStore.playHeartbeatMode) this.toggleHeartMode(false);
+    if (statusStore.playHeartbeatMode && !options.keepHeartbeatMode) {
+      this.toggleHeartMode(false);
+    }
     if (statusStore.personalFmMode) statusStore.personalFmMode = false;
     // 是否直接播放
     if (song && typeof song === "object" && "id" in song) {
@@ -1091,7 +1098,15 @@ class Player {
       if (result.code === 200) {
         this.message?.destroy();
         const heartRatelists = formatSongsList(result.data);
-        await this.updatePlayList(heartRatelists, heartRatelists[0]);
+        this.nextPrefetch = null;
+        statusStore.playIndex = 0;
+        // 先更新播放列表，再设置心动模式标志
+        await this.updatePlayList(heartRatelists, heartRatelists[0], undefined, {
+          showTip: true,
+          scrobble: true,
+          play: true,
+          keepHeartbeatMode: true,
+        });
         statusStore.playHeartbeatMode = true;
       } else {
         this.message?.destroy();
