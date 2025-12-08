@@ -372,7 +372,7 @@ const setUserLikeDataLoop = async <T>(
   if (key === "artists") {
     dataStore.setUserLikeData(key, allData as ArtistType[]);
   } else {
-    dataStore.setUserLikeData(key as any, allData as CoverType[]);
+    dataStore.setUserLikeData(key, allData as CoverType[]);
   }
 
   console.log(`✅ Fetched ${allData.length} ${key} for user ${userId}`);
