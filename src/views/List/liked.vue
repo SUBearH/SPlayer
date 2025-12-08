@@ -13,9 +13,6 @@
       :more-options="moreOptions"
       @update:search-value="handleSearchUpdate"
       @play-all="playAllSongs"
-      @search="performSearch"
-      @tag-click="handleTagClick"
-      @description-click="openDescModal"
     />
     <Transition name="fade" mode="out-in">
       <SongList
@@ -44,20 +41,20 @@
 
 <script setup lang="ts">
 import type { DropdownOption, MessageReactive } from "naive-ui";
+import { SongType } from "@/types/main";
 import { songDetail } from "@/api/song";
 import { playlistDetail, playlistAllSongs } from "@/api/playlist";
 import { formatCoverList, formatSongsList } from "@/utils/format";
 import { renderIcon, copyData } from "@/utils/helper";
 import { uniqBy } from "lodash-es";
 import { useDataStore, useSettingStore, useMusicStore } from "@/stores";
-import { openBatchList, openDescModal, openUpdatePlaylist } from "@/utils/modal";
+import { openBatchList, openUpdatePlaylist } from "@/utils/modal";
 import { isLogin, updateUserLikePlaylist, updateUserLikeSongs, toLikeSong } from "@/utils/auth";
 import { useListDetail } from "@/composables/List/useListDetail";
 import { useListSearch } from "@/composables/List/useListSearch";
 import { useListScroll } from "@/composables/List/useListScroll";
 import { useListActions } from "@/composables/List/useListActions";
 import ListDetail from "@/components/List/ListDetail.vue";
-import { SongType } from "@/types/main";
 import {
   saveLikedListCache,
   getCachedLikedSongs,
