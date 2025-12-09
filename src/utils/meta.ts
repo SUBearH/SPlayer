@@ -140,20 +140,24 @@ export const renderToolbar = ({ nodes }: ImageRenderToolbarProps) => {
   ];
 };
 
-// AMLL TTML DB Server 列表
+/**
+ * AMLL TTML DB Server 列表
+ * @returns AMLL TTML DB Server 列表
+ */
 export const amllDbServers = [
   {
-    label: "GitHub 官方仓库 (推荐)",
+    label: "【推荐】GitHub 官方仓库",
     description: "官方源，更新及时，但访问速度可能较慢",
-    value: "https://raw.githubusercontent.com/Steve-xmh/amll-ttml-db/refs/heads/main/ncm-lyrics/%s.ttml",
+    value:
+      "https://raw.githubusercontent.com/Steve-xmh/amll-ttml-db/refs/heads/main/ncm-lyrics/%s.ttml",
   },
   {
     label: "AMLL TTML DB Service (SteveXMH)",
-    description: "作者提供的官方镜像源，但免费额度快没了",
+    description: "作者提供的官方镜像源，但免费额度快没了 😂",
     value: "https://amll-ttml-db.stevexmh.net/ncm/%s",
   },
   {
-    label: "AMLL TTML DB 镜像站 (HelloZGY) (默认)",
+    label: "【默认】AMLL TTML DB 镜像站 (HelloZGY)",
     description: "社区提供的镜像源，感谢 HelloZGY",
     value: "https://amlldb.bikonoo.com/ncm-lyrics/%s.ttml",
   },
@@ -169,5 +173,9 @@ export const amllDbServers = [
   },
 ] as const;
 
-// 默认 AMLL TTML DB Server (HelloZGY)
+/**
+ * 默认 AMLL TTML DB Server
+ * 感谢 HelloZGY 提供镜像源
+ * @returns 默认 AMLL TTML DB Server
+ */
 export const defaultAMLLDbServer = amllDbServers[2].value;
