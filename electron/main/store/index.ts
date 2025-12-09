@@ -1,6 +1,7 @@
 import { screen } from "electron";
 import { storeLog } from "../logger";
 import type { LyricConfig } from "../../../src/types/desktop-lyric";
+import { defaultAMLLDbServer } from "../utils/config";
 import defaultLyricConfig from "../../../src/assets/data/lyricConfig";
 import Store from "electron-store";
 
@@ -47,6 +48,7 @@ export const useStore = () => {
         config: defaultLyricConfig,
       },
       proxy: "",
+      amllDbServer: defaultAMLLDbServer,
     },
   });
 };
