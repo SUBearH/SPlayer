@@ -8,8 +8,9 @@ import { isEmpty } from "lodash-es";
 import { convertToLocalTime } from "./time";
 import { useSettingStore } from "@/stores";
 import { marked } from "marked";
-import SvgIcon from "@/components/Global/SvgIcon.vue";
 import { isElectron } from "./env";
+import SvgIcon from "@/components/Global/SvgIcon.vue";
+import Fuse from "fuse.js";
 
 type AnyObject = { [key: string]: any };
 
@@ -75,50 +76,24 @@ export const renderOption = ({ node, option }: { node: VNode; option: SelectOpti
  */
 export const fuzzySearch = (keyword: string, data: SongType[]): SongType[] => {
   try {
-    const result: SongType[] = [];
-    const regex = new RegExp(keyword, "i");
+    if (!keyword || !data || !Array.isArray(data)) return [];
 
-    /**
-     * 递归函数：遍历对象及其嵌套属性，过滤包含关键词的对象
-     * @param {Object} obj - 要检查的对象
-     * @returns {boolean} - 如果找到匹配的属性值，返回 true；否则返回 false
-     */
-    const searchInObject = (obj: AnyObject): boolean => {
-      for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          const value = obj[key];
-          // 如果属性值是对象，则递归调用
-          if (typeof value === "object" && value !== null) {
-            if (searchInObject(value)) {
-              return true;
-            }
-          }
-          // 检查属性值是否是字符串并包含关键词
-          if (value && typeof value === "string" && regex.test(value)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    };
+    const fuse = new Fuse(data, {
+      // 针对歌曲可读字段进行索引
+      keys: [
+        { name: "name", weight: 0.5 },
+        { name: "alia", weight: 0.2 },
+        { name: "artists", weight: 0.15 },
+        { name: "artists.name", weight: 0.15 },
+        { name: "album", weight: 0.1 },
+        { name: "album.name", weight: 0.1 },
+        { name: "dj.name", weight: 0.05 },
+      ],
+      threshold: 0.35, // 0 精确匹配 ~ 1 完全模糊
+      ignoreLocation: true, // 不要求关键词位置接近
+    });
 
-    if (!data) return [];
-
-    // 如果传入的是数组，遍历数组
-    if (Array.isArray(data)) {
-      for (const item of data) {
-        if (searchInObject(item)) {
-          result.push(item);
-        }
-      }
-    } else {
-      // 如果传入的是对象，直接调用递归函数
-      if (searchInObject(data)) {
-        result.push(data);
-      }
-    }
-
-    return result;
+    return fuse.search(keyword).map((result) => result.item);
   } catch (error) {
     console.error("模糊搜索出现错误：", error);
     return [];
@@ -386,84 +361,6 @@ const shuffleArray = <T>(arr: T[]): T[] => {
 };
 
 /**
- * 智能洗牌（避免连续播放同一歌手）
- */
-export const smartShuffle = (list: SongType[]): SongType[] => {
-  // 1. 先进行一次完全随机洗牌
-  const arr = shuffleArray(list);
-
-  // 辅助函数：获取歌手名
-  const getArtistName = (s: SongType) => {
-    if (!s.artists) return "";
-    if (typeof s.artists === "string") return s.artists;
-    return s.artists[0]?.name || "";
-  };
-
-  // 2. 遍历并解决冲突
-  for (let i = 1; i < arr.length; i++) {
-    const prev = arr[i - 1];
-    const curr = arr[i];
-
-    // 如果当前歌曲与上一首是同一歌手
-    if (getArtistName(prev) === getArtistName(curr)) {
-      // 在后续列表中寻找一首不同歌手的歌进行交换
-      let swapIndex = -1;
-      for (let j = i + 1; j < arr.length; j++) {
-        // 确保交换过来的歌既不和前一首重复，也不和后一首重复（如果存在）
-        // 这里简化处理：只确保不和前一首重复
-        if (getArtistName(prev) !== getArtistName(arr[j])) {
-          swapIndex = j;
-          break;
-        }
-      }
-
-      // 如果找到了，交换
-      if (swapIndex !== -1) {
-        [arr[i], arr[swapIndex]] = [arr[swapIndex], arr[i]];
-      }
-      // 如果没找到（说明后面全是同一歌手），则无法优化，保持原样
-    }
-  }
-
-  return arr;
-};
-
-/**
- * 在浏览器空闲时执行任务
- * @param task 要执行的任务
- */
-export const runIdle = (task: () => void) => {
-  try {
-    const ric = window?.requestIdleCallback as ((cb: () => void) => number) | undefined;
-    if (typeof ric === "function") {
-      ric(() => {
-        try {
-          task();
-        } catch {
-          /* empty */
-        }
-      });
-    } else {
-      setTimeout(() => {
-        try {
-          task();
-        } catch {
-          /* empty */
-        }
-      }, 0);
-    }
-  } catch {
-    setTimeout(() => {
-      try {
-        task();
-      } catch {
-        /* empty */
-      }
-    }, 0);
-  }
-};
-
-/**
  * 处理歌曲音质
  * @param song 歌曲数据
  * @param type 歌曲类型
@@ -481,12 +378,12 @@ export const handleSongQuality = (
     return QualityType.LQ;
   }
   // 含有 level 特殊处理
-  if( typeof song === "object" && "level" in song){
-    if(song.level === "hires") return QualityType.HiRes;
-    if(song.level === "lossless") return QualityType.SQ;
-    if(song.level === "exhigh") return QualityType.HQ;
-    if(song.level === "higher") return QualityType.MQ;
-    if(song.level === "standard") return QualityType.LQ;
+  if (typeof song === "object" && "level" in song) {
+    if (song.level === "hires") return QualityType.HiRes;
+    if (song.level === "lossless") return QualityType.SQ;
+    if (song.level === "exhigh") return QualityType.HQ;
+    if (song.level === "higher") return QualityType.MQ;
+    if (song.level === "standard") return QualityType.LQ;
     return undefined;
   }
   const order = [
