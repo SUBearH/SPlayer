@@ -34,6 +34,8 @@ class Player {
   private retryInfo: { songId: number; count: number } = { songId: 0, count: 0 };
   /** 存储事件回调函数的引用，用于清理 */
   private eventCallbacks: Map<AudioEventType, (e: Event) => void> = new Map();
+  /** 已预加载的封面 URL 集合 */
+  private preloadedCovers = new Set<string>();
   constructor() {
     // 初始化媒体会话
     this.initMediaSession();
@@ -67,19 +69,25 @@ class Player {
     this.eventCallbacks.clear();
   }
   /**
-   * 解绑 AudioManager 事件
-   */
-  private unbindAudioEvents() {
-    // 清理所有音频事件监听器
-    this.eventCallbacks.forEach((callback, event) => {
-      audioManager.off(event, callback);
-    });
-    this.eventCallbacks.clear();
-  }
-  /**
    * 绑定 AudioManager 事件
    */
   private bindAudioEvents() {
+    // 等待中
+    audioManager.on("waiting", () => {
+      const statusStore = useStatusStore();
+      statusStore.playLoading = true;
+      console.log("⏳ song waiting");
+      // 如果等待超过 10 秒，尝试重载
+      if (this.waitingTimeout) clearTimeout(this.waitingTimeout);
+      this.waitingTimeout = setTimeout(() => {
+        console.warn("⚠️ waiting timeout, retrying...");
+        this.handlePlaybackError(2);
+      }, 10000);
+    });
+    // 停滞
+    audioManager.on("stalled", () => {
+      console.log("⚠️ song stalled");
+    });
     // 清理可能存在的旧事件监听器
     this.unbindAudioEvents();
     // 播放
