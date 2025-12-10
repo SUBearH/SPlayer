@@ -653,6 +653,8 @@ onMounted(async () => {
   if (isElectron) {
     getDesktopLyricConfig();
     getAllSystemFonts();
+    // 恢复地址
+    await window.api.store.set("amllDbServer", settingStore.amllDbServer);
   }
 });
 </script>

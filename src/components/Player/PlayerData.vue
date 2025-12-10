@@ -17,7 +17,7 @@
               size="22"
             />
           </template>
-          <div :style="{ '--theme': theme }" class="player-tip">
+          <div class="player-tip">
             {{
               musicStore.playSong.pc
                 ? "云盘歌曲，由用户上传"
@@ -110,7 +110,6 @@ import { getCachedQuality, updateCachedQuality } from "@/utils/qualityCache";
 
 defineProps<{
   center?: boolean;
-  theme?: string;
   // 少量数据模式
   light?: boolean;
 }>();
@@ -212,7 +211,7 @@ const jumpPage = debounce(
   margin-top: 24px;
   padding: 0 2px;
   .n-icon {
-    color: rgb(var(--main-color));
+    color: rgb(var(--main-cover-color));
   }
   .name {
     position: relative;
@@ -298,44 +297,7 @@ const jumpPage = debounce(
       font-size: 12px;
       border-radius: 8px;
       padding: 2px 6px;
-      border: 1.2px solid rgba(var(--main-color), 0.6);
-      transition: all 0.3s ease;
-      opacity: 0.6;
-
-      &.quality-sq {
-        border: 1.2px solid rgba(255, 127, 0, 0.6);
-        color: rgb(255, 127, 0);
-        opacity: 0.8;
-      }
-
-      &.quality-hires {
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 180, 0, 0.2) 100%);
-        border: 1.5px solid rgba(255, 215, 0, 0.9);
-        color: rgb(255, 215, 0);
-        font-weight: 700;
-        letter-spacing: 0.8px;
-        box-shadow: 0 0 12px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.15);
-        text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
-        opacity: 0.6;
-
-        &:hover {
-          box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2);
-        }
-      }
-
-      &.quality-dolby {
-        background: linear-gradient(135deg, rgba(100, 150, 255, 0.15) 0%, rgba(150, 100, 255, 0.15) 100%);
-        border: 1.2px solid rgba(100, 150, 255, 0.8);
-        color: rgb(100, 150, 255);
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        box-shadow: 0 0 12px rgba(100, 150, 255, 0.3), inset 0 0 8px rgba(100, 150, 255, 0.1);
-        opacity: 0.8;
-
-        &:hover {
-          box-shadow: 0 0 20px rgba(100, 150, 255, 0.5), inset 0 0 12px rgba(100, 150, 255, 0.15);
-        }
-      }
+      border: 1px solid rgba(var(--main-cover-color), 0.6);
     }
   }
   &.record {
@@ -380,8 +342,8 @@ const jumpPage = debounce(
   max-width: 240px;
   padding: 12px 20px;
   border-radius: 12px;
-  color: rgb(var(--theme));
-  background-color: rgba(var(--theme), 0.18);
+  color: rgb(var(--main-cover-color));
+  background-color: rgba(var(--main-cover-color), 0.18);
   backdrop-filter: blur(10px);
 }
 </style>
