@@ -39,6 +39,17 @@
             <SvgIcon name="Close" />
           </div>
         </n-flex>
+        <!-- 歌曲信息 -->
+        <n-flex
+          v-if="lyricConfig.alwaysShowPlayInfo"
+          :size="0"
+          :class="['play-title', lyricConfig.position]"
+          :style="{ fontFamily: lyricConfig.fontFamily }"
+          vertical
+        >
+          <span class="name">{{ lyricData.playName }}</span>
+          <span class="artist">{{ lyricData.artistName }}</span>
+        </n-flex>
       </div>
       <n-flex
         :style="{
