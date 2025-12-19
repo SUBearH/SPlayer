@@ -36,57 +36,42 @@ export const setGlobalColor = (name: string, colorValue: string): void => {
 };
 
 // 设置动态配色
-export const getColorSchemes = (
+export const setColorSchemes = (
   color: string | CoverColors,
   // 明暗模式
   mode: "dark" | "light",
-) => {
+): { [key: string]: string } => {
   const settingStore = useSettingStore();
   const colorData = typeof color === "string" ? getMDColor(color) : color;
   if (!colorData) throw new Error("Color data not found");
   // 指定模式颜色数据
   const colorModeData = colorData[mode];
-  const result: any = { ...colorModeData };
-  // 是否全局应用
-  if (!settingStore.themeGlobalColor && result) {
-    // 修改关键颜色
-    result.background =
-      mode === "dark" ? { r: 16, g: 16, b: 20 } : { r: 246, g: 246, b: 246 };
-    result["surface-container"] =
-      mode === "dark" ? { r: 24, g: 24, b: 28 } : { r: 255, g: 255, b: 255 };
-  }
-  return result;
-};
-
-export const applyColorSchemes = (colorModeData: any) => {
   const modifiedColorModeData: { [key: string]: string } = {};
+  // 是否全局应用
+  if (!settingStore.themeGlobalColor && colorModeData) {
+    // 修改关键颜色
+    colorModeData.background =
+      mode === "dark" ? { r: 16, g: 16, b: 20 } : { r: 246, g: 246, b: 246 };
+    colorModeData["surface-container"] =
+      mode === "dark" ? { r: 24, g: 24, b: 28 } : { r: 255, g: 255, b: 255 };
+    console.log(colorModeData);
+  }
   // 遍历颜色并修改
   for (const key in colorModeData) {
     const color = colorModeData[key];
     if (typeof color === "object" && "r" in color && "g" in color && "b" in color) {
-      const r = Math.round(color.r);
-      const g = Math.round(color.g);
-      const b = Math.round(color.b);
-      const hexValue = rgbToHex(r, g, b);
+      const hexValue = rgbToHex(color.r, color.g, color.b);
       // 修改后的颜色值存储在新的对象中
       modifiedColorModeData[`${key}-hex`] = hexValue;
-      modifiedColorModeData[key] = `${r}, ${g}, ${b}`;
+      modifiedColorModeData[key] = `${color.r}, ${color.g}, ${color.b}`;
       // 设置样式
-      setGlobalColor(`--${key}`, `${r}, ${g}, ${b}`);
+      setGlobalColor(`--${key}`, `${color.r}, ${color.g}, ${color.b}`);
       setGlobalColor(`--${key}-hex`, hexValue);
     } else {
       console.error(`Invalid color data for key: ${key}`);
     }
   }
   return modifiedColorModeData;
-};
-
-export const setColorSchemes = (
-  color: string | CoverColors,
-  mode: "dark" | "light",
-): { [key: string]: string } => {
-  const schemes = getColorSchemes(color, mode);
-  return applyColorSchemes(schemes);
 };
 
 // 获取封面主题
