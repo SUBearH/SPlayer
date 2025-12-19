@@ -9,8 +9,8 @@
     />
     <!-- 专辑图片 -->
     <s-image
-      :key="musicStore.getSongCover()"
-      :src="musicStore.getSongCover('l')"
+      :key="musicStore.playSong.id"
+      :src="coverUrl"
       :observe-visibility="false"
       class="cover-img"
     />
@@ -43,6 +43,9 @@ const settingStore = useSettingStore();
 // 动态封面
 const dynamicCover = ref<string>("");
 const dynamicCoverLoaded = ref<boolean>(false);
+
+// 封面 URL
+const coverUrl = computed(() => musicStore.getSongCover("l"));
 
 // 视频元素
 const videoRef = ref<HTMLVideoElement | null>(null);

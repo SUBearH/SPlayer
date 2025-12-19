@@ -140,11 +140,15 @@ class AudioManager {
 
     // 处理渐入
     if (shouldPlay && options.fadeIn && this.gainNode && this.audioCtx) {
+      // 确保音量从 0 开始
       this.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
       this.gainNode.gain.setValueAtTime(0, this.audioCtx.currentTime);
-      this.gainNode.gain.linearRampToValueAtTime(
+      // 使用 exponentialRampToValueAtTime 实现更自然的听感
+      // 注意：exponentialRampToValueAtTime 的目标值不能为 0，所以我们从一个极小值开始
+      this.gainNode.gain.setValueAtTime(0.001, this.audioCtx.currentTime);
+      this.gainNode.gain.exponentialRampToValueAtTime(
         this.volume,
-        this.audioCtx.currentTime + (options.fadeDuration || 1),
+        this.audioCtx.currentTime + (options.fadeDuration || 0.5),
       );
     } else if (this.gainNode && this.audioCtx) {
       this.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
@@ -168,16 +172,25 @@ class AudioManager {
   public pause(options: { fadeOut?: boolean; fadeDuration?: number } = {}) {
     if (options.fadeOut && this.gainNode && this.audioCtx) {
       const currentTime = this.audioCtx.currentTime;
-      // 从当前值线性降低到 0
+      const fadeDuration = options.fadeDuration || 0.5;
+
+      // 渐出
       this.gainNode.gain.cancelScheduledValues(currentTime);
       this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, currentTime);
-      this.gainNode.gain.linearRampToValueAtTime(0, currentTime + (options.fadeDuration || 1));
+      // 使用 exponentialRampToValueAtTime 实现更自然的听感
+      this.gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + fadeDuration);
+
       // 等待渐出完成后暂停
       setTimeout(
         () => {
           this.audioElement?.pause();
+          // 恢复音量以便下次播放
+          if (this.gainNode && this.audioCtx) {
+            this.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
+            this.gainNode.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
+          }
         },
-        (options.fadeDuration || 1) * 1000,
+        fadeDuration * 1000,
       );
     } else {
       this.audioElement?.pause();

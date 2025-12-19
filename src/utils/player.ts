@@ -1,6 +1,7 @@
 import { type SongType, type PlayModeType } from "@/types/main";
 import { type IFormat } from "music-metadata";
 import { type MessageReactive } from "naive-ui";
+import { watch } from "vue";
 import { cloneDeep } from "lodash-es";
 import { useMusicStore, useStatusStore, useDataStore, useSettingStore } from "@/stores";
 import { calculateProgress, msToS } from "./time";
@@ -31,11 +32,29 @@ class Player {
   private waitingTimeout: ReturnType<typeof setTimeout> | undefined;
   /** 当前曲目重试信息（按歌曲维度计数） */
   private retryInfo: { songId: number; count: number } = { songId: 0, count: 0 };
+  /** 已预加载的封面 URL 集合 */
+  private preloadedCovers = new Set<string>();
   constructor() {
     // 初始化媒体会话
     this.initMediaSession();
     // 绑定音频事件
     this.bindAudioEvents();
+    // 绑定播放列表变化
+    this.bindPlaylistEvents();
+  }
+  /**
+   * 绑定播放列表变化
+   */
+  private bindPlaylistEvents() {
+    const dataStore = useDataStore();
+    // 监听播放列表变化，动态预加载
+    watch(
+      () => dataStore.playList,
+      () => {
+        this.preloadNextCovers();
+      },
+      { deep: true },
+    );
   }
   /**
    * 绑定 AudioManager 事件
@@ -219,7 +238,45 @@ class Player {
     if (!path) this.updateMediaSession();
     // 预载下一首播放地址
     this.nextPrefetch = await songManager.getNextSongUrl();
+    // 预加载后续歌曲封面
+    this.preloadNextCovers();
   }
+  /**
+   * 预加载后续歌曲封面（后5首）
+   */
+  private preloadNextCovers() {
+    const dataStore = useDataStore();
+    const musicStore = useMusicStore();
+    const { playList } = dataStore;
+    const currentSongId = musicStore.playSong.id;
+
+    if (!playList || playList.length === 0) return;
+
+    // 获取当前歌曲索引
+    const playIndex = playList.findIndex((s) => s.id === currentSongId);
+    if (playIndex === -1) return;
+
+    // 获取后5首歌曲
+    const nextSongs: SongType[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const index = (playIndex + i) % playList.length;
+      nextSongs.push(playList[index]);
+    }
+
+    // 预加载封面
+    nextSongs.forEach((song) => {
+      if (song) {
+        // 预加载大图 (PlayerCover 使用 l)
+        const coverUrl = song.coverSize?.l || song.cover;
+        if (coverUrl && !coverUrl.startsWith("data:") && !this.preloadedCovers.has(coverUrl)) {
+          this.preloadedCovers.add(coverUrl);
+          const img = new Image();
+          img.src = coverUrl;
+        }
+      }
+    });
+  }
+
   /**
    * 初始化 MediaSession
    */
@@ -1127,6 +1184,41 @@ class Player {
     const { autoClose } = useStatusStore();
     autoClose.enable = false;
     autoClose.remainTime = autoClose.time * 60;
+  }
+
+  /**
+   * 预加载后续歌曲封面（后3首）
+   */
+  private preloadNextCovers() {
+    const dataStore = useDataStore();
+    const musicStore = useMusicStore();
+    const { playList } = dataStore;
+    const currentSongId = musicStore.playSong.id;
+
+    if (!playList || playList.length === 0) return;
+
+    // 获取当前歌曲索引
+    const playIndex = playList.findIndex((s) => s.id === currentSongId);
+    if (playIndex === -1) return;
+
+    // 获取后3首歌曲
+    const nextSongs: SongType[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const index = (playIndex + i) % playList.length;
+      nextSongs.push(playList[index]);
+    }
+
+    // 预加载封面
+    nextSongs.forEach((song) => {
+      if (song) {
+        // 预加载大图 (PlayerCover 使用 l)
+        const coverUrl = song.coverSize?.l || song.cover;
+        if (coverUrl && !coverUrl.startsWith("data:")) {
+          const img = new Image();
+          img.src = coverUrl;
+        }
+      }
+    });
   }
 }
 
