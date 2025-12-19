@@ -492,7 +492,8 @@ const clearCache = () => {
         // 5. 清除 sessionStorage (通用接口缓存、页面组件缓存)
         sessionStorage.clear();
         // 6. 清除 localStorage (保留设置、登录状态、Cookies、快捷键)
-        const keepKeys = ["setting-store", "data-store", "shortcut-store"];\n        Object.keys(localStorage).forEach((key) => {
+        const keepKeys = ["setting-store", "data-store", "shortcut-store"];
+        Object.keys(localStorage).forEach((key) => {
           // 保留 keepKeys 中的项以及以 cookie- 开头的项
           if (!keepKeys.includes(key) && !key.startsWith("cookie-")) {
             localStorage.removeItem(key);

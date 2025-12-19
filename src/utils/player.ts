@@ -1196,40 +1196,7 @@ class Player {
     autoClose.remainTime = autoClose.time * 60;
   }
 
-  /**
-   * 预加载后续歌曲封面（后3首）
-   */
-  private preloadNextCovers() {
-    const dataStore = useDataStore();
-    const musicStore = useMusicStore();
-    const { playList } = dataStore;
-    const currentSongId = musicStore.playSong.id;
 
-    if (!playList || playList.length === 0) return;
-
-    // 获取当前歌曲索引
-    const playIndex = playList.findIndex((s) => s.id === currentSongId);
-    if (playIndex === -1) return;
-
-    // 获取后3首歌曲
-    const nextSongs: SongType[] = [];
-    for (let i = 1; i <= 3; i++) {
-      const index = (playIndex + i) % playList.length;
-      nextSongs.push(playList[index]);
-    }
-
-    // 预加载封面
-    nextSongs.forEach((song) => {
-      if (song) {
-        // 预加载大图 (PlayerCover 使用 l)
-        const coverUrl = song.coverSize?.l || song.cover;
-        if (coverUrl && !coverUrl.startsWith("data:")) {
-          const img = new Image();
-          img.src = coverUrl;
-        }
-      }
-    });
-  }
 }
 
 let _player: Player | null = null;

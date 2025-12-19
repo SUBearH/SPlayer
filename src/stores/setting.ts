@@ -322,7 +322,6 @@ export const useSettingStore = defineStore("setting", {
     hideUserPlaylists: false,
     hideLikedPlaylists: false,
     hideHeartbeatMode: false,
-    enableSearchKeyword: true,
     homePageSections: [
       { key: "playlist", name: "专属歌单", visible: true, order: 0 },
       { key: "radar", name: "雷达歌单", visible: true, order: 1 },

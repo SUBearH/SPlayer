@@ -152,23 +152,15 @@
 
 <script setup lang="ts">
 import type { SelectOption } from "naive-ui";
-import { useDataStore, useMusicStore, useSettingStore, useStatusStore } from "@/stores";
-import { isDev, isElectron } from "@/utils/env";
+import { useMusicStore, useSettingStore, useStatusStore } from "@/stores";
 import songManager from "@/utils/songManager";
 import { isEmpty } from "lodash-es";
 import themeColor from "@/assets/data/themeColor.json";
 import { openSidebarHideManager, openHomePageSectionManager } from "@/utils/modal";
 
-const dataStore = useDataStore();
 const musicStore = useMusicStore();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
-
-// 全部字体
-const allFontsData = ref<SelectOption[]>([]);
-
-// 是否开启在线服务
-const useOnlineService = ref(settingStore.useOnlineService);
 
 // 全局主题色配置
 const themeColorOptions: SelectOption[] = [
@@ -181,21 +173,6 @@ const themeColorOptions: SelectOption[] = [
     },
   })),
 ];
-
-// 关闭任务栏进度
-const closeTaskbarProgress = (val: boolean) => {
-  if (!val) window.electron.ipcRenderer.send("set-bar", "none");
-};
-
-// 获取全部系统字体
-const getAllSystemFonts = async () => {
-  // ...existing code...
-};
-
-// 在线模式切换
-const modeChange = (val: boolean) => {
-  // ...existing code...
-};
 
 // 全局着色更改
 const themeGlobalColorChange = (val: boolean) => {
