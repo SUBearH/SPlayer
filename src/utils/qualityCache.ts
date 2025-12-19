@@ -1,3 +1,5 @@
+import { MapCache } from "./storage";
+
 // 全局缓存管理（包括音质、封面等）
 interface SongCache {
   quality?: string;
@@ -6,38 +8,20 @@ interface SongCache {
 }
 
 const CACHE_STORAGE_KEY = "splayer_song_cache";
-const songCache = new Map<number, SongCache>();
+const songCache = new MapCache<SongCache>(CACHE_STORAGE_KEY);
 
 /**
  * 初始化缓存，从本地存储加载
  */
 export function initializeCache(): void {
-  try {
-    const stored = localStorage.getItem(CACHE_STORAGE_KEY);
-    if (stored) {
-      const data = JSON.parse(stored);
-      Object.entries(data).forEach(([key, value]) => {
-        songCache.set(Number(key), value as SongCache);
-      });
-    }
-  } catch (error) {
-    console.error("Failed to load cache from localStorage:", error);
-  }
+  // 自动加载
 }
 
 /**
  * 保存所有缓存到本地存储
  */
 export function saveCache(): void {
-  try {
-    const data: Record<string, SongCache> = {};
-    songCache.forEach((value, key) => {
-      data[key] = value;
-    });
-    localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(data));
-  } catch (error) {
-    console.error("Failed to save cache to localStorage:", error);
-  }
+  songCache.save();
 }
 
 /**
@@ -177,11 +161,6 @@ export function setCachedSongData(songId: number | undefined, data: SongCache): 
  */
 export function clearCache(): void {
   songCache.clear();
-  try {
-    localStorage.removeItem(CACHE_STORAGE_KEY);
-  } catch (error) {
-    console.error("Failed to clear cache from localStorage:", error);
-  }
 }
 
 export default songCache;

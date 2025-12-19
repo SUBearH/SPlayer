@@ -1,37 +1,21 @@
+import { MapCache } from "./storage";
+
 // 图片离线缓存管理（支持 Data URL 格式）
 const IMAGE_CACHE_STORAGE_KEY = "splayer_image_cache";
-const imageCache = new Map<string, string>(); // URL -> Data URL
+const imageCache = new MapCache<string>(IMAGE_CACHE_STORAGE_KEY);
 
 /**
  * 初始化图片缓存，从本地存储加载
  */
 export function initializeImageCache(): void {
-  try {
-    const stored = localStorage.getItem(IMAGE_CACHE_STORAGE_KEY);
-    if (stored) {
-      const data = JSON.parse(stored);
-      Object.entries(data).forEach(([key, value]) => {
-        imageCache.set(key, value as string);
-      });
-    }
-  } catch (error) {
-    console.error("Failed to load image cache from localStorage:", error);
-  }
+  // 自动加载，无需手动调用
 }
 
 /**
  * 保存图片缓存到本地存储
  */
 export function saveImageCache(): void {
-  try {
-    const data: Record<string, string> = {};
-    imageCache.forEach((value, key) => {
-      data[key] = value;
-    });
-    localStorage.setItem(IMAGE_CACHE_STORAGE_KEY, JSON.stringify(data));
-  } catch (error) {
-    console.error("Failed to save image cache to localStorage:", error);
-  }
+  imageCache.save();
 }
 
 /**
@@ -41,14 +25,7 @@ export function saveImageCache(): void {
  */
 export function getCachedImageUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
-
-  const cached = imageCache.get(url);
-  if (cached) {
-    return cached;
-  }
-
-  // 如果没有缓存，返回原 URL（在线时会正常加载）
-  return url;
+  return imageCache.get(url) || url;
 }
 
 /**
@@ -71,18 +48,11 @@ export function cacheImageUrl(url: string, dataUrl: string): void {
   imageCache.set(url, dataUrl);
 }
 
-
-
 /**
  * 清空所有图片缓存
  */
 export function clearImageCache(): void {
   imageCache.clear();
-  try {
-    localStorage.removeItem(IMAGE_CACHE_STORAGE_KEY);
-  } catch (error) {
-    console.error("Failed to clear image cache from localStorage:", error);
-  }
 }
 
 /**
@@ -99,68 +69,5 @@ export function getImageCacheStats(): { count: number; size: number } {
     size: Math.round(size / 1024), // KB
   };
 }
-
-// /**
-//  * 预加载网络图片并转换为 Data URL 缓存
-//  * @param url 图片 URL
-//  * @returns Promise<Data URL>
-//  */
-// export async function preloadAndCacheImage(url: string): Promise<string> {
-//   if (!url) return "";
-
-//   // 先检查缓存
-//   const cached = imageCache.get(url);
-//   if (cached) {
-//     return cached;
-//   }
-
-//   try {
-//     const response = await fetch(url);
-//     if (!response.ok) {
-//       console.warn(`Failed to fetch image: ${url} (status: ${response.status}), falling back to browser preload`);
-//       // 降级：使用 Image 对象预加载（利用浏览器缓存）
-//       const img = new Image();
-//       img.src = url;
-//       return url;
-//     }
-
-//     const blob = await response.blob();
-
-//     // 限制图片大小
-//     if (blob.size > 500000) { // 增加限制到 500KB
-//       console.warn(`Image too large (${blob.size} bytes) for URL: ${url}`);
-//       // 降级：使用 Image 对象预加载
-//       const img = new Image();
-//       img.src = url;
-//       return url;
-//     }
-
-//     // 转换为 Data URL
-//     return new Promise<string>((resolve) => {
-//       const reader = new FileReader();
-//       reader.onload = (event) => {
-//         const dataUrl = event.target?.result as string;
-//         if (dataUrl) {
-//           // 缓存 Data URL
-//           imageCache.set(url, dataUrl);
-//           resolve(dataUrl);
-//         } else {
-//           resolve(url);
-//         }
-//       };
-//       reader.onerror = () => {
-//         console.error(`FileReader error for URL: ${url}`);
-//         resolve(url);
-//       };
-//       reader.readAsDataURL(blob);
-//     });
-//   } catch (error) {
-//     console.warn(`Failed to preload and cache image: ${url}, falling back to browser preload`, error);
-//     // 降级：使用 Image 对象预加载
-//     const img = new Image();
-//     img.src = url;
-//     return url;
-//   }
-// }
 
 export default imageCache;
