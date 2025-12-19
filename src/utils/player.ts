@@ -5,7 +5,7 @@ import { watch } from "vue";
 import { cloneDeep } from "lodash-es";
 import { useMusicStore, useStatusStore, useDataStore, useSettingStore } from "@/stores";
 import { calculateProgress, msToS } from "./time";
-import { shuffleArray, handleSongQuality } from "./helper";
+import { smartShuffle, handleSongQuality } from "./helper";
 import { heartRateList } from "@/api/playlist";
 import { formatSongsList } from "./format";
 import { isLogin } from "./auth";
@@ -687,7 +687,7 @@ class Player {
       if (currentList && currentList.length > 1) {
         const currentSongId = musicStore.playSong?.id;
         await dataStore.setOriginalPlayList(currentList);
-        const shuffled = shuffleArray(currentList);
+        const shuffled = smartShuffle(currentList);
         await dataStore.setPlayList(shuffled);
         if (currentSongId) {
           const newIndex = shuffled.findIndex((s) => s?.id === currentSongId);
@@ -833,7 +833,7 @@ class Player {
       // 保存原始播放列表
       await dataStore.setOriginalPlayList(cloneDeep(data));
       // 随机排序
-      processedData = shuffleArray(processedData);
+      processedData = smartShuffle(processedData);
     }
     // 更新列表
     await dataStore.setPlayList(processedData);

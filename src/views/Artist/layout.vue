@@ -250,12 +250,15 @@ const listScroll = (e: Event) => {
   listScrolling.value = scrollTop > 10;
 };
 
+// 监听 ID 变化
+watch(artistId, (val) => {
+  if (val) getArtistDetail(val);
+});
+
 onBeforeRouteUpdate((to) => {
   listScrolling.value = false;
   if (to.matched[0].name !== "artist") return;
   artistType.value = to.name as string;
-  const id = Number(to.query.id as string);
-  if (id && id !== artistId.value) getArtistDetail(id);
 });
 
 onMounted(() => getArtistDetail(artistId.value));

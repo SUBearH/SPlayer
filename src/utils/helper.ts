@@ -376,13 +376,56 @@ export const changeLocalLyricPath = changeLocalPath(
 /**
  * 洗牌数组（Fisher-Yates）
  */
-export const shuffleArray = <T>(arr: T[]): T[] => {
+const shuffleArray = <T>(arr: T[]): T[] => {
   const copy = arr.slice();
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+};
+
+/**
+ * 智能洗牌（避免连续播放同一歌手）
+ */
+export const smartShuffle = (list: SongType[]): SongType[] => {
+  // 1. 先进行一次完全随机洗牌
+  const arr = shuffleArray(list);
+
+  // 辅助函数：获取歌手名
+  const getArtistName = (s: SongType) => {
+    if (!s.artists) return "";
+    if (typeof s.artists === "string") return s.artists;
+    return s.artists[0]?.name || "";
+  };
+
+  // 2. 遍历并解决冲突
+  for (let i = 1; i < arr.length; i++) {
+    const prev = arr[i - 1];
+    const curr = arr[i];
+
+    // 如果当前歌曲与上一首是同一歌手
+    if (getArtistName(prev) === getArtistName(curr)) {
+      // 在后续列表中寻找一首不同歌手的歌进行交换
+      let swapIndex = -1;
+      for (let j = i + 1; j < arr.length; j++) {
+        // 确保交换过来的歌既不和前一首重复，也不和后一首重复（如果存在）
+        // 这里简化处理：只确保不和前一首重复
+        if (getArtistName(prev) !== getArtistName(arr[j])) {
+          swapIndex = j;
+          break;
+        }
+      }
+
+      // 如果找到了，交换
+      if (swapIndex !== -1) {
+        [arr[i], arr[swapIndex]] = [arr[swapIndex], arr[i]];
+      }
+      // 如果没找到（说明后面全是同一歌手），则无法优化，保持原样
+    }
+  }
+
+  return arr;
 };
 
 /**
