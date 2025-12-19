@@ -184,13 +184,19 @@ export const useDataStore = defineStore("data", {
       await musicDB.setItem("originalPlayList", []);
     },
     // 新增下一首播放歌曲
-    async setNextPlaySong(song: SongType, index: number): Promise<number> {
+    async setNextPlaySong(
+      song: SongType,
+      index: number,
+    ): Promise<{ insertIndex: number; currentSongIndex: number }> {
       // 若为空,则直接添加
       if (this.playList.length === 0) {
         this.playList = [song];
         await musicDB.setItem("playList", cloneDeep(this.playList));
-        return 0;
+        return { insertIndex: 0, currentSongIndex: 0 };
       }
+
+      // 获取当前播放歌曲的 ID (用于后续修正索引)
+      const currentSongId = this.playList[index]?.id;
 
       // 在当前播放位置之后插入歌曲
       const indexAdd = index + 1;
@@ -200,8 +206,13 @@ export const useDataStore = defineStore("data", {
       // 更新本地存储
       this.playList = playList;
       await musicDB.setItem("playList", cloneDeep(playList));
-      // 返回刚刚插入的歌曲索引
-      return playList.findIndex((item) => item.id === song.id);
+      // 返回刚刚插入的歌曲索引和当前歌曲的新索引
+      return {
+        insertIndex: playList.findIndex((item) => item.id === song.id),
+        currentSongIndex: currentSongId
+          ? playList.findIndex((item) => item.id === currentSongId)
+          : index,
+      };
     },
     // 更改播放历史
     async setHistory(song: SongType) {

@@ -880,10 +880,17 @@ class Player {
       return;
     }
     // 尝试添加
-    const songIndex = await dataStore.setNextPlaySong(song, statusStore.playIndex);
+    const { insertIndex, currentSongIndex } = await dataStore.setNextPlaySong(
+      song,
+      statusStore.playIndex,
+    );
+    // 修正当前播放索引 (如果发生了变化)
+    if (currentSongIndex !== -1 && currentSongIndex !== statusStore.playIndex) {
+      statusStore.playIndex = currentSongIndex;
+    }
     // 播放歌曲
-    if (songIndex < 0) return;
-    if (play) this.togglePlayIndex(songIndex, true);
+    if (insertIndex < 0) return;
+    if (play) this.togglePlayIndex(insertIndex, true);
     else window.$message.success("已添加至下一首播放");
   }
   /**
