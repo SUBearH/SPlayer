@@ -286,7 +286,7 @@ const displayCover = computed(() => {
 
 // 性能优化：缓存加入时间显示的条件判断
 const displayAddTime = computed(() => {
-  return song.value.addTime && song.value.type !== 'radio';
+  return settingStore.showSongAddTime && song.value.addTime && song.value.type !== 'radio';
 });
 
 // 格式化加入时间（根据状态切换显示格式）

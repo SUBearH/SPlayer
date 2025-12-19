@@ -23,8 +23,6 @@ class MainProcess {
   isQuit: boolean = false;
   // 启动时传入的 orpheus URL
   launchOrpheusUrl: string | null = null;
-  // 前端是否已就绪
-  frontendReady: boolean = false;
 
   constructor() {
     processLog.info("🚀 Main process startup");
@@ -36,8 +34,6 @@ class MainProcess {
     this.parseOrpheusUrlFromArguments();
     // 监听应用事件
     this.handleAppEvents();
-    // 监听前端就绪事件
-    this.setupFrontendReadyListener();
     // Electron 初始化完成后
     app.whenReady().then(async () => {
       processLog.info("🚀 Application Process Startup");
@@ -52,60 +48,16 @@ class MainProcess {
       this.mainTray = initTray(this.mainWindow!);
       // 注册 IPC 通信
       initIpc();
-      // 监听主窗口加载完成事件
-      if (this.mainWindow) {
-        this.mainWindow.webContents.once("did-finish-load", () => {
-          processLog.info("Main window loaded, waiting for frontend ready");
-          // 处理启动时的 orpheus URL（等待前端就绪）
-          if (this.launchOrpheusUrl) {
-            this.waitForFrontendReady(() => {
-              processLog.info("Frontend ready, handling orpheus protocol");
-              this.handleOrpheusProtocol(this.launchOrpheusUrl!);
-            });
-          }
-          // 销毁加载窗口
-          if (this.loadWindow && !this.loadWindow.isDestroyed()) {
-            this.loadWindow.destroy();
-            this.loadWindow = null;
-          }
-          // 显示主窗口
-          if (this.mainWindow) {
-            this.mainWindow.show();
-            this.mainWindow.focus();
-          }
-        });
-      }
+
+      // 监听窗口加载完成，处理启动时的 orpheus URL
+      ipcMain.on("win-loaded", () => {
+        if (this.launchOrpheusUrl) {
+          processLog.info("Window loaded, handling orpheus protocol");
+          this.handleOrpheusProtocol(this.launchOrpheusUrl!);
+          this.launchOrpheusUrl = null;
+        }
+      });
     });
-  }
-
-  // 设置前端就绪监听器
-  private setupFrontendReadyListener(): void {
-    ipcMain.on("frontend-ready", () => {
-      processLog.info("✅ Frontend is ready");
-      this.frontendReady = true;
-    });
-  }
-
-  // 等待前端就绪
-  private waitForFrontendReady(callback: () => void): void {
-    if (this.frontendReady) {
-      // 前端已就绪，立即执行
-      callback();
-    } else {
-      // 前端未就绪，设置超时等待（3秒）
-      const timeoutId = setTimeout(() => {
-        processLog.warn("Frontend ready timeout, proceeding anyway");
-        callback();
-      }, 3000);
-
-      // 监听前端就绪事件
-      const handleReady = () => {
-        clearTimeout(timeoutId);
-        ipcMain.off("frontend-ready", handleReady);
-        callback();
-      };
-      ipcMain.once("frontend-ready", handleReady);
-    }
   }
 
   // 注册自定义协议

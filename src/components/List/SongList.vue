@@ -125,7 +125,7 @@
 <script setup lang="ts">
 import type { DropdownOption } from "naive-ui";
 import { SongType, SortType } from "@/types/main";
-import { useMusicStore, useStatusStore } from "@/stores";
+import { useMusicStore, useStatusStore, useSettingStore } from "@/stores";
 import { VirtList } from "vue-virt-list";
 import { entries, isEmpty } from "lodash-es";
 import { sortOptions } from "@/utils/meta";
@@ -181,6 +181,7 @@ const emit = defineEmits<{
 const player = usePlayer();
 const musicStore = useMusicStore();
 const statusStore = useStatusStore();
+const settingStore = useSettingStore();
 
 // 列表状态
 const offset = ref<number>(0);
@@ -265,7 +266,7 @@ const sortMenuOptions = computed<DropdownOption[]>(() =>
 
 // 性能优化：缓存表头显示条件，避免每次重新计算
 const showAddTimeColumn = computed(() => {
-  return props.data?.[0]?.addTime && props.type !== 'radio';
+  return settingStore.showSongAddTime && props.data?.[0]?.addTime && props.type !== 'radio';
 });
 
 const showSizeColumn = computed(() => {

@@ -38,7 +38,7 @@ app.use(router);
 app.directive("debounce", debounceDirective);
 app.directive("throttle", throttleDirective);
 app.directive("visible", visibleDirective);
-// app
+
 app.mount("#app");
 
 // 页面关闭时保存缓存

@@ -298,12 +298,12 @@ const jumpPage = debounce(
       font-size: 12px;
       border-radius: 8px;
       padding: 2px 6px;
-      border: 1px solid rgba(var(--main-color), 0.6);
+      border: 1.2px solid rgba(var(--main-color), 0.6);
       transition: all 0.3s ease;
       opacity: 0.6;
 
       &.quality-sq {
-        border: 1px solid rgba(255, 127, 0, 0.6);
+        border: 1.2px solid rgba(255, 127, 0, 0.6);
         color: rgb(255, 127, 0);
         opacity: 0.8;
       }
@@ -325,7 +325,7 @@ const jumpPage = debounce(
 
       &.quality-dolby {
         background: linear-gradient(135deg, rgba(100, 150, 255, 0.15) 0%, rgba(150, 100, 255, 0.15) 100%);
-        border: 1px solid rgba(100, 150, 255, 0.8);
+        border: 1.2px solid rgba(100, 150, 255, 0.8);
         color: rgb(100, 150, 255);
         font-weight: 600;
         letter-spacing: 0.5px;
