@@ -39,7 +39,8 @@ import {
   GlobalThemeOverrides,
 } from "naive-ui";
 import { useSettingStore, useStatusStore } from "@/stores";
-import { setColorSchemes } from "@/utils/color";
+import { getColorSchemes, applyColorSchemes } from "@/utils/color";
+import { useTransition, TransitionPresets } from "@vueuse/core";
 // import { rgbToHex } from "@imsyy/color-utils";
 import themeColor from "@/assets/data/themeColor.json";
 
@@ -55,6 +56,38 @@ const themeOverrides = shallowRef<GlobalThemeOverrides>({});
 const toRGBA = (rgb: string, alpha: number) => `rgba(${rgb}, ${alpha})`;
 // 主题缓存键
 let lastThemeCacheKey: string | null = null;
+
+// 扁平化颜色对象
+const flattenColors = (colors: any) => {
+  const flat: any = {};
+  for (const key in colors) {
+    if (colors[key] && typeof colors[key] === "object") {
+      flat[`${key}_r`] = colors[key].r;
+      flat[`${key}_g`] = colors[key].g;
+      flat[`${key}_b`] = colors[key].b;
+    }
+  }
+  return flat;
+};
+
+// 还原颜色对象
+const unflattenColors = (flat: any) => {
+  const colors: any = {};
+  for (const key in flat) {
+    const [name, channel] = key.split("_");
+    if (!colors[name]) colors[name] = {};
+    colors[name][channel] = flat[key];
+  }
+  return colors;
+};
+
+// 目标颜色（扁平化）
+const targetColors = ref<any>({});
+// 过渡颜色
+const transitionedColors = useTransition(targetColors, {
+  duration: 300,
+  transition: TransitionPresets.easeInOutCubic,
+});
 
 // 获取明暗模式
 const theme = computed(() => {
@@ -74,31 +107,31 @@ const getThemeMainColor = () => {
   const themeType = theme.value ? "dark" : "light";
   if (settingStore.themeFollowCover && statusStore.songCoverTheme) {
     const coverColor = statusStore.songCoverTheme;
-    if (!coverColor) return setColorSchemes(themeColor["default"].color, themeType);
-    return setColorSchemes(coverColor, themeType);
+    if (!coverColor) return getColorSchemes(themeColor["default"].color, themeType);
+    return getColorSchemes(coverColor, themeType);
   } else if (settingStore.themeColorType !== "custom") {
-    return setColorSchemes(themeColor[settingStore.themeColorType].color, themeType);
+    return getColorSchemes(themeColor[settingStore.themeColorType].color, themeType);
   } else {
-    return setColorSchemes(settingStore.themeCustomColor, themeType);
+    return getColorSchemes(settingStore.themeCustomColor, themeType);
   }
 };
 
 // 更改全局主题
 const changeGlobalTheme = () => {
-  let colorSchemes;
+  let rawSchemes;
   const themeType = theme.value ? "dark" : "light";
 
   try {
     // 获取配色方案
-    colorSchemes = getThemeMainColor();
+    rawSchemes = getThemeMainColor();
   } catch (error) {
     console.error("获取主题色失败:", error);
   }
 
   // 若获取失败或为空，则使用默认主题
-  if (!colorSchemes || Object.keys(colorSchemes).length === 0) {
+  if (!rawSchemes || Object.keys(rawSchemes).length === 0) {
     try {
-      colorSchemes = setColorSchemes(themeColor["default"].color, themeType);
+      rawSchemes = getColorSchemes(themeColor["default"].color, themeType);
     } catch (error) {
       console.error("默认主题生成失败:", error);
       themeOverrides.value = {};
@@ -106,6 +139,12 @@ const changeGlobalTheme = () => {
     }
   }
 
+  // 更新目标颜色，触发过渡
+  targetColors.value = flattenColors(rawSchemes);
+};
+
+// 更新主题覆盖配置
+const updateThemeOverrides = (colorSchemes: { [key: string]: string }) => {
   try {
     // 构造主题缓存 Key
     const themeModeLabel = theme.value ? "dark" : "light";
@@ -127,7 +166,9 @@ const changeGlobalTheme = () => {
       primaryColorHover: toRGBA(primaryRGB, 0.78),
       primaryColorPressed: toRGBA(primaryRGB, 0.26),
       primaryColorSuppl: toRGBA(primaryRGB, 0.12),
-    } as GlobalThemeOverrides["common"];    if (settingStore.themeGlobalColor) {
+    } as GlobalThemeOverrides["common"];
+
+    if (settingStore.themeGlobalColor) {
       themeOverrides.value = {
         common: {
           ...commonBase,
@@ -290,5 +331,13 @@ watchDebounced(
 
 onMounted(() => {
   changeGlobalTheme();
+});
+
+// 监听过渡颜色变化
+watch(transitionedColors, (val) => {
+  if (!val || Object.keys(val).length === 0) return;
+  const rawColors = unflattenColors(val);
+  const formattedSchemes = applyColorSchemes(rawColors);
+  updateThemeOverrides(formattedSchemes);
 });
 </script>
