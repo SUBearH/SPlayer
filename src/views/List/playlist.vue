@@ -708,7 +708,6 @@ onMounted(() => getPlaylistDetail(playlistId.value));
             .n-tag {
               font-size: 13px;
               padding: 0 16px;
-              line-height: 0;
               cursor: pointer;
               transition:
                 transform 0.3s,

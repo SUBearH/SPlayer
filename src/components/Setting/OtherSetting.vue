@@ -325,6 +325,7 @@ import { debounce } from "lodash-es";
 import type { SelectOption } from "naive-ui";
 import { clearImageCache } from "@/utils/imageCache";
 import { clearSongCache } from "@/utils/qualityCache";
+import { clearLikedListCache } from "@/utils/likedListCache";
 
 const dataStore = useDataStore();
 const settingStore = useSettingStore();
@@ -474,7 +475,8 @@ const resetSetting = () => {
 const clearCache = () => {
   window.$dialog.warning({
     title: "警告",
-    content: "此操作将清除本地缓存数据并热重载软件，是否继续?",
+    content:
+      "此操作将清除以下数据(包括最近播放列表)并热重载软件：\n1. 图片数据缓存\n2. 歌曲元数据缓存\n3. 我喜欢的音乐列表缓存\n4. IndexedDB 数据库 (包含红心歌单、播放列表等)\n5. 播放器状态 (播放进度、音量等)\n6. 界面状态 (侧边栏、主题色等)\n\n保留数据：\n1. 用户设置\n2. 登录状态\n3. 快捷键设置\n\n是否继续?",
     positiveText: "确定",
     negativeText: "取消",
     onPositiveClick: async () => {
@@ -483,19 +485,20 @@ const clearCache = () => {
         clearImageCache();
         // 2. 清除歌曲元数据缓存
         clearSongCache();
-        // 3. 清除 IndexedDB (包含红心歌单、其他大数据量缓存)
+        // 3. 清除我喜欢的音乐缓存
+        clearLikedListCache();
+        // 4. 清除 IndexedDB (包含红心歌单、其他大数据量缓存)
         await dataStore.deleteDB();
-        // 4. 清除 sessionStorage (通用接口缓存、页面组件缓存)
+        // 5. 清除 sessionStorage (通用接口缓存、页面组件缓存)
         sessionStorage.clear();
-        // 5. 清除 localStorage (保留设置、登录状态、Cookies)
-        const keepKeys = ["setting-store", "data-store"];
-        Object.keys(localStorage).forEach((key) => {
+        // 6. 清除 localStorage (保留设置、登录状态、Cookies、快捷键)
+        const keepKeys = ["setting-store", "data-store", "shortcut-store"];\n        Object.keys(localStorage).forEach((key) => {
           // 保留 keepKeys 中的项以及以 cookie- 开头的项
           if (!keepKeys.includes(key) && !key.startsWith("cookie-")) {
             localStorage.removeItem(key);
           }
         });
-        // 6. 热重载 (清除内存中的缓存、图片组件缓存、播放预加载内容)
+        // 7. 热重载 (清除内存中的缓存、图片组件缓存、播放预加载内容)
         window.$message.loading("本地缓存清除完成，软件即将热重载", {
           duration: 3000,
           onAfterLeave: () => window.location.reload(),

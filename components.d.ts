@@ -139,6 +139,7 @@ declare module 'vue' {
     SearchDefault: typeof import('./src/components/Search/SearchDefault.vue')['default']
     SearchInp: typeof import('./src/components/Search/SearchInp.vue')['default']
     SearchInpMenu: typeof import('./src/components/Menu/SearchInpMenu.vue')['default']
+    SearchSetting: typeof import('./src/components/Setting/SearchSetting.vue')['default']
     SearchSuggest: typeof import('./src/components/Search/SearchSuggest.vue')['default']
     SidebarHideManager: typeof import('./src/components/Modal/SidebarHideManager.vue')['default']
     Sider: typeof import('./src/components/Layout/Sider.vue')['default']
