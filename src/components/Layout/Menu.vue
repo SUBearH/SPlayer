@@ -104,14 +104,14 @@ const menuOptions = computed<MenuOption[] | MenuGroupOption[]>(() => {
               h(NText, null, () => "我喜欢的音乐"),
               !settingStore.hideHeartbeatMode
                 ? h(NButton, {
-                    type: "tertiary",
+                    type: statusStore.playHeartbeatMode ? "primary" : "tertiary",
                     round: true,
                     strong: true,
-                    secondary: true,
+                    secondary: !statusStore.playHeartbeatMode,
                     renderIcon: renderIcon("HeartBit"),
                     onClick: (event: Event) => {
                       event.stopPropagation();
-                      openHeartMode();
+                      openHeartMode(!statusStore.playHeartbeatMode);
                     },
                   })
                 : null,
@@ -310,10 +310,14 @@ const checkMenuItem = () => {
 };
 
 // 开启心动模式
-const openHeartMode = debounce(() => player.toggleHeartMode(), 1000, {
-  leading: true,
-  trailing: false,
-});
+const openHeartMode = debounce(
+  (open: boolean) => player.toggleHeartMode(open),
+  1000,
+  {
+    leading: true,
+    trailing: false,
+  },
+);
 
 // 监听路由
 watch(

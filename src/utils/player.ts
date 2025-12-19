@@ -661,7 +661,10 @@ class Player {
     const dataStore = useDataStore();
     const musicStore = useMusicStore();
     // 退出心动模式
-    if (statusStore.playHeartbeatMode) this.toggleHeartMode(false);
+    if (statusStore.playHeartbeatMode) {
+      this.toggleHeartMode(false);
+      if (!mode) return;
+    }
     // 计算目标模式
     let targetMode: PlayModeType;
     if (mode) {

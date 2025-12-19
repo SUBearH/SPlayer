@@ -12,16 +12,21 @@
       </div>
     </n-dropdown>
     <!-- 播放模式 -->
-    <n-dropdown
-      v-if="musicStore.playSong.type !== 'radio' && !statusStore.personalFmMode"
-      :options="playModeOptions"
-      :show-arrow="false"
-      @select="(mode) => player.togglePlayMode(mode)"
-    >
-      <div class="menu-icon" @click.stop="player.togglePlayMode(false)">
+    <template v-if="musicStore.playSong.type !== 'radio' && !statusStore.personalFmMode">
+      <n-dropdown
+        v-if="!statusStore.playHeartbeatMode"
+        :options="playModeOptions"
+        :show-arrow="false"
+        @select="(mode) => player.togglePlayMode(mode)"
+      >
+        <div class="menu-icon" @click.stop="player.togglePlayMode(false)">
+          <SvgIcon :name="statusStore.playModeIcon" />
+        </div>
+      </n-dropdown>
+      <div v-else class="menu-icon" @click.stop="player.togglePlayMode(false)">
         <SvgIcon :name="statusStore.playModeIcon" />
       </div>
-    </n-dropdown>
+    </template>
     <!-- 音量调节 -->
     <n-popover :show-arrow="false" :style="{ padding: 0 }">
       <template #trigger>
