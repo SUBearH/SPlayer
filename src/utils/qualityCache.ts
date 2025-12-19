@@ -18,7 +18,14 @@ export function initializeCache(): void {
 }
 
 /**
- * 保存所有缓存到本地存储
+ * 清除歌曲缓存
+ */
+export function clearSongCache(): void {
+  songCache.clear();
+}
+
+/**
+ * 保存缓存到本地存储
  */
 export function saveCache(): void {
   songCache.save();

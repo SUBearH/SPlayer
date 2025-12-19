@@ -19,6 +19,13 @@ export function saveImageCache(): void {
 }
 
 /**
+ * 清除图片缓存
+ */
+export function clearImageCache(): void {
+  imageCache.clear();
+}
+
+/**
  * 获取缓存的图片 Data URL
  * @param url 原始图片 URL
  * @returns Data URL（如果不存在则返回原 URL）
@@ -46,13 +53,6 @@ export function cacheImageUrl(url: string, dataUrl: string): void {
   }
 
   imageCache.set(url, dataUrl);
-}
-
-/**
- * 清空所有图片缓存
- */
-export function clearImageCache(): void {
-  imageCache.clear();
 }
 
 /**

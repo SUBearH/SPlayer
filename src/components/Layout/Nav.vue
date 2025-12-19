@@ -22,13 +22,31 @@
       <!-- 用户 -->
       <User v-if="settingStore.useOnlineService" />
       <!-- 设置菜单 -->
-      <n-dropdown :options="setOptions" trigger="click" show-arrow @select="setSelect">
+      <n-dropdown
+        v-if="isDev"
+        :options="setOptions"
+        trigger="click"
+        show-arrow
+        @select="setSelect"
+      >
         <n-button :focusable="false" title="设置" tertiary circle>
           <template #icon>
             <SvgIcon name="Settings" />
           </template>
         </n-button>
       </n-dropdown>
+      <n-button
+        v-else
+        :focusable="false"
+        title="设置"
+        tertiary
+        circle
+        @click="openSetting()"
+      >
+        <template #icon>
+          <SvgIcon name="Settings" />
+        </template>
+      </n-button>
     </n-flex>
     <!-- 客户端控制 -->
     <n-flex v-if="isElectron" align="center" class="client-control">
@@ -139,61 +157,14 @@ const tryClose = () => {
 // 设置菜单
 const setOptions = computed<DropdownOption[]>(() => [
   {
-    label:
-      settingStore.themeMode === "auto"
-        ? "浅色模式"
-        : settingStore.themeMode === "light"
-          ? "深色模式"
-          : "跟随系统",
-    key: "themeMode",
-    icon: renderIcon(
-      settingStore.themeMode === "auto"
-        ? "LightTheme"
-        : settingStore.themeMode === "light"
-          ? "DarkTheme"
-          : "AutoTheme",
-    ),
-  },
-  // {
-  //   key: "divider-1",
-  //   type: "divider",
-  // },
-  // {
-  //   // 交流群
-  //   key: "qq",
-  //   label: "加入交流群",
-  //   props: {
-  //     onClick: () =>
-  //       openLink(
-  //         "https://qm.qq.com/cgi-bin/qm/qr?k=2-cVSf1bE0AvAehCib00qFEFdUvPaJ_k&jump_from=webapi&authKey=1NEhib9+GsmsXVo2rCc0IbRaVHeeRXJJ0gbsyKDcIwDdAzYySOubkFCvkV32+7Cw",
-  //       ),
-  //   },
-  //   icon: renderIcon("QQ"),
-  // },
-  // {
-  //   // 交流群
-  //   key: "github",
-  //   label: "开源仓库",
-  //   props: { onClick: () => openLink(packageJson.github) },
-  //   icon: renderIcon("Github"),
-  // },
-  {
-    key: "divider-2",
-    type: "divider",
-  },
-  {
-    // 重启
-    key: "restart",
-    label: "软件热重载",
-    show: isElectron,
-    props: { onClick: () => window.electron.ipcRenderer.send("win-reload") },
-    icon: renderIcon("Restart"),
-  },
-  {
     key: "dev-tools",
     label: "开启控制台",
-    show: isDev,
     icon: renderIcon("Code"),
+  },
+  {
+    key: "reload",
+    label: "软件热重载",
+    icon: renderIcon("Refresh"),
   },
   {
     key: "setting",
@@ -205,14 +176,14 @@ const setOptions = computed<DropdownOption[]>(() => [
 // 菜单选择
 const setSelect = (key: string) => {
   switch (key) {
-    case "themeMode":
-      settingStore.setThemeMode();
-      break;
     case "setting":
       openSetting();
       break;
     case "dev-tools":
       window.electron.ipcRenderer.send("open-dev-tools");
+      break;
+    case "reload":
+      window.electron.ipcRenderer.send("win-reload");
       break;
     default:
       break;

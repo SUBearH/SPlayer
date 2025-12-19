@@ -97,19 +97,37 @@ const setSearchHistory = (keyword: string) => {
 
 // 更换搜索框关键词
 const updatePlaceholder = async () => {
-  if (!settingStore.enableSearchKeyword) {
-    searchPlaceholder.value = " ";
+  if (!settingStore.enableSearchKeyword || !settingStore.useOnlineService) {
     return;
   }
   try {
     const result = await searchDefault();
-    searchPlaceholder.value = result.data.showKeyword;
-    searchRealkeyword.value = result.data.realkeyword;
+    if (result.data.showKeyword) {
+      searchPlaceholder.value = result.data.showKeyword;
+      searchRealkeyword.value = result.data.realkeyword;
+    }
   } catch (error) {
     console.error("搜索关键词获取失败：", error);
-    searchPlaceholder.value = " ";
   }
 };
+
+// 定时更新
+const { pause, resume } = useIntervalFn(updatePlaceholder, 60 * 1000, { immediate: false });
+
+// 监听设置变化
+watch(
+  [() => settingStore.enableSearchKeyword, () => settingStore.useOnlineService],
+  ([enable, online]) => {
+    if (enable && online) {
+      updatePlaceholder();
+      resume();
+    } else {
+      pause();
+      searchPlaceholder.value = online ? "搜索关键词、ID或链接" : "搜索本地音乐";
+    }
+  },
+  { immediate: true },
+);
 
 // 前往搜索
 const toSearch = async (key: any, type: string = "keyword") => {
@@ -177,10 +195,7 @@ const toSearch = async (key: any, type: string = "keyword") => {
 };
 
 onMounted(() => {
-  // 每分钟更新
-  if (settingStore.useOnlineService && settingStore.enableSearchKeyword) {
-    useIntervalFn(updatePlaceholder, 60 * 1000, { immediate: true });
-  }
+  // 已通过 watch 实现自动更新
 });
 </script>
 

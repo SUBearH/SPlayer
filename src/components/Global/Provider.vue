@@ -74,7 +74,7 @@ const getThemeMainColor = () => {
   const themeType = theme.value ? "dark" : "light";
   if (settingStore.themeFollowCover && statusStore.songCoverTheme) {
     const coverColor = statusStore.songCoverTheme;
-    if (!coverColor) return {};
+    if (!coverColor) return setColorSchemes(themeColor["default"].color, themeType);
     return setColorSchemes(coverColor, themeType);
   } else if (settingStore.themeColorType !== "custom") {
     return setColorSchemes(themeColor[settingStore.themeColorType].color, themeType);
@@ -85,13 +85,28 @@ const getThemeMainColor = () => {
 
 // 更改全局主题
 const changeGlobalTheme = () => {
+  let colorSchemes;
+  const themeType = theme.value ? "dark" : "light";
+
   try {
     // 获取配色方案
-    const colorSchemes = getThemeMainColor();
-    if (!colorSchemes || Object.keys(colorSchemes).length === 0) {
+    colorSchemes = getThemeMainColor();
+  } catch (error) {
+    console.error("获取主题色失败:", error);
+  }
+
+  // 若获取失败或为空，则使用默认主题
+  if (!colorSchemes || Object.keys(colorSchemes).length === 0) {
+    try {
+      colorSchemes = setColorSchemes(themeColor["default"].color, themeType);
+    } catch (error) {
+      console.error("默认主题生成失败:", error);
       themeOverrides.value = {};
       return;
     }
+  }
+
+  try {
     // 构造主题缓存 Key
     const themeModeLabel = theme.value ? "dark" : "light";
     const themeCacheKey = `${themeModeLabel}|${settingStore.themeGlobalColor ? 1 : 0}|${settingStore.globalFont}|${colorSchemes.primary}|${colorSchemes.background}|${colorSchemes["surface-container"]}`;

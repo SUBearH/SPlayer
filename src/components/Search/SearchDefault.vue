@@ -25,7 +25,7 @@
           </n-flex>
         </div>
         <!-- 热搜榜 -->
-        <div v-if="searchHotData.length > 0" class="hot-list">
+        <div v-if="settingStore.showSearchHot && searchHotData.length > 0" class="hot-list">
           <div class="title">
             <SvgIcon name="Fire" />
             <n-text class="name">热搜榜 </n-text>
@@ -80,16 +80,18 @@ const searchHotData = ref<any>([]);
 
 // 是否展示
 const isShow = computed(() => {
+  const hasHistory = settingStore.showSearchHistory && dataStore.searchHistory.length > 0;
+  const hasHot = settingStore.showSearchHot && searchHotData.value.length > 0;
   return (
     !statusStore.searchInputValue &&
     statusStore.searchFocus &&
-    (searchHotData.value.length > 0 || dataStore.searchHistory.length > 0)
+    (hasHot || hasHistory)
   );
 });
 
 // 获取热搜数据
 const getSearchHotData = async () => {
-  if (!settingStore.useOnlineService) return;
+  if (!settingStore.useOnlineService || !settingStore.showSearchHot) return;
   const result = await getCacheData(searchHot, {
     key: "searchHotData",
     time: 10,

@@ -34,6 +34,8 @@
         <PlaySetting v-else-if="activeKey === 'play'" />
         <!-- 歌词 -->
         <LyricsSetting v-else-if="activeKey === 'lyrics'" />
+        <!-- 搜索 -->
+        <SearchSetting v-else-if="activeKey === 'search'" />
         <!-- 快捷键 -->
         <KeyboardSetting v-else-if="activeKey === 'keyboard'" />
         <!-- 本地 -->
@@ -80,6 +82,11 @@ const menuOptions: MenuOption[] = [
     key: "lyrics",
     label: "歌词设置",
     icon: renderIcon("Lyrics"),
+  },
+  {
+    key: "search",
+    label: "搜索设置",
+    icon: renderIcon("Search"),
   },
   {
     key: "keyboard",

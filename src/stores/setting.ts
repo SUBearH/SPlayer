@@ -210,6 +210,8 @@ export interface SettingState {
   hideHeartbeatMode: boolean;
   /** 启用搜索关键词获取 */
   enableSearchKeyword: boolean;
+  /** 显示热搜榜 */
+  showSearchHot: boolean;
   /** 首页栏目顺序和显示配置 */
   homePageSections: Array<{
     key: "playlist" | "radar" | "artist" | "video" | "radio" | "album";
@@ -231,6 +233,8 @@ export const useSettingStore = defineStore("setting", {
     japaneseLyricFont: "follow",
     hideVipTag: false,
     showSearchHistory: true,
+    enableSearchKeyword: true,
+    showSearchHot: true,
     menuShowCover: true,
     menuExpandedKeys: [],
     routeAnimation: "slide",
