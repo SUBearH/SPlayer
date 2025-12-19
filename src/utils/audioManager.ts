@@ -24,7 +24,8 @@ type AudioEventType =
   | "loadstart"
   | "volumechange"
   | "seeking"
-  | "seeked";
+  | "seeked"
+  | "stalled";
 
 /**
  * 音频管理器类
@@ -296,6 +297,7 @@ class AudioManager {
       "volumechange",
       "seeking",
       "seeked",
+      "stalled",
     ];
 
     events.forEach((event) => {

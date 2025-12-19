@@ -27,6 +27,8 @@ class Player {
   private message: MessageReactive | null = null;
   /** 预载下一首歌曲播放地址缓存 */
   private nextPrefetch: NextPrefetchSong = null;
+  /** 等待超时定时器 */
+  private waitingTimeout: ReturnType<typeof setTimeout> | undefined;
   /** 当前曲目重试信息（按歌曲维度计数） */
   private retryInfo: { songId: number; count: number } = { songId: 0, count: 0 };
   constructor() {
@@ -39,12 +41,33 @@ class Player {
    * 绑定 AudioManager 事件
    */
   private bindAudioEvents() {
+    // 等待中
+    audioManager.on("waiting", () => {
+      const statusStore = useStatusStore();
+      statusStore.playLoading = true;
+      console.log("⏳ song waiting");
+      // 如果等待超过 10 秒，尝试重载
+      if (this.waitingTimeout) clearTimeout(this.waitingTimeout);
+      this.waitingTimeout = setTimeout(() => {
+        console.warn("⚠️ waiting timeout, retrying...");
+        this.handlePlaybackError(2);
+      }, 10000);
+    });
+    // 停滞
+    audioManager.on("stalled", () => {
+      console.log("⚠️ song stalled");
+    });
     // 播放
     audioManager.on("play", () => {
       const statusStore = useStatusStore();
       const playSongData = songManager.getPlaySongData();
 
       statusStore.playStatus = true;
+      statusStore.playLoading = false;
+      if (this.waitingTimeout) {
+        clearTimeout(this.waitingTimeout);
+        this.waitingTimeout = undefined;
+      }
       window.document.title = songManager.getPlayerInfo() || "SPlayer";
       // 重置重试计数
       const sid = playSongData?.type === "radio" ? playSongData?.dj?.id : playSongData?.id;
@@ -133,6 +156,10 @@ class Player {
     audioManager.on("canplay", () => {
       const statusStore = useStatusStore();
       statusStore.playLoading = false;
+      if (this.waitingTimeout) {
+        clearTimeout(this.waitingTimeout);
+        this.waitingTimeout = undefined;
+      }
       // 恢复均衡器
       if (isElectron && statusStore.eqEnabled) {
         // 简单恢复 EQ 增益
