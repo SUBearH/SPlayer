@@ -98,14 +98,14 @@
 <details>
 <summary>主页面</summary>
 
-![主页面](/screenshots/SPlayer%20-%20主页面.jpg)
+![主页面](/screenshots/SPlayer%20-%20主页面.png)
 
 </details>
 
 <details>
 <summary>播放页面</summary>
 
-![播放页面](/screenshots/SPlayer%20-%20播放页面.jpg)
+![播放页面](/screenshots/SPlayer%20-%20播放页面.png)
 
 </details>
 
@@ -119,14 +119,14 @@
 <details>
 <summary>歌单页面</summary>
 
-![发现页面](/screenshots/SPlayer%20-%20歌单页面.jpg)
+![发现页面](/screenshots/SPlayer%20-%20歌单页面.png)
 
 </details>
 
 <details>
 <summary>评论页面</summary>
 
-![发现页面](/screenshots/SPlayer%20-%20评论页面.jpg)
+![发现页面](/screenshots/SPlayer%20-%20评论页面.png)
 
 </details>
 
