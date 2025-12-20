@@ -124,6 +124,8 @@ class Player {
         this.executeAutoClose();
         return;
       }
+      // 避免重复触发
+      if (statusStore.playLoading) return;
       this.nextOrPrev("next", true, true);
     });
     // 错误

@@ -183,7 +183,10 @@ class AudioManager {
       // 等待渐出完成后暂停
       setTimeout(
         () => {
-          this.audioElement?.pause();
+          // 检查是否仍在播放同一首歌，避免切歌时被暂停
+          if (!this.audioElement?.paused) {
+            this.audioElement?.pause();
+          }
           // 恢复音量以便下次播放
           if (this.gainNode && this.audioCtx) {
             this.gainNode.gain.cancelScheduledValues(this.audioCtx.currentTime);
