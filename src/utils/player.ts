@@ -1064,6 +1064,18 @@ class Player {
       const statusStore = useStatusStore();
       if (!open && statusStore.playHeartbeatMode) {
         statusStore.playHeartbeatMode = false;
+        // 恢复备份状态
+        if (statusStore.heartbeatBackup) {
+          const { playList, playIndex, playPlaylistId, playSongId } = statusStore.heartbeatBackup;
+          await dataStore.setPlayList(playList);
+          musicStore.playPlaylistId = playPlaylistId;
+          // 尝试恢复到之前的歌曲
+          const targetIndex = playList.findIndex((s) => s.id === playSongId);
+          statusStore.playIndex = targetIndex !== -1 ? targetIndex : playIndex;
+          // 重新初始化播放器（不自动播放，或者根据需求决定）
+          await this.initPlayer(true);
+          statusStore.heartbeatBackup = null;
+        }
         window.$message.success("已退出心动模式");
         return;
       }
@@ -1092,6 +1104,13 @@ class Player {
       const result = await heartRateList(playSongData?.id || 0, pid);
       if (result.code === 200) {
         this.message?.destroy();
+        // 备份当前状态
+        statusStore.heartbeatBackup = {
+          playList: cloneDeep(dataStore.playList),
+          playIndex: statusStore.playIndex,
+          playPlaylistId: musicStore.playPlaylistId,
+          playSongId: playSongData?.id || 0,
+        };
         const heartRatelists = formatSongsList(result.data);
         await this.updatePlayList(heartRatelists, heartRatelists[0]);
         statusStore.playHeartbeatMode = true;

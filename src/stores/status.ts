@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { QualityType, type SortType } from "@/types/main";
+import { QualityType, type SortType, type SongType } from "@/types/main";
 import type { PlayModeType, RGB, ColorScheme } from "@/types/main";
 
 interface StatusState {
@@ -31,6 +31,13 @@ interface StatusState {
   playSongMode: PlayModeType;
   /** 心动模式 */
   playHeartbeatMode: boolean;
+  /** 心动模式前播放状态备份 */
+  heartbeatBackup: {
+    playList: SongType[];
+    playIndex: number;
+    playPlaylistId: number;
+    playSongId: number;
+  } | null;
   /** 封面主题 */
   songCoverTheme: {
     /** 封面主题颜色 */
@@ -123,6 +130,7 @@ export const useStatusStore = defineStore("status", {
     playVolumeMute: 0,
     playSongMode: "repeat",
     playHeartbeatMode: false,
+    heartbeatBackup: null,
     personalFmMode: false,
     mainContentHeight: 0,
     listSort: "default",
