@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { keywords, regexes } from "@/assets/data/exclude";
 import { SongUnlockServer } from "@/utils/songManager";
+import { defaultAMLLDbServer } from "@/utils/meta";
 
 export interface SettingState {
   /** 明暗模式 */
@@ -138,6 +139,8 @@ export interface SettingState {
   useAMSpring: boolean;
   /** 是否启用在线 TTML 歌词 */
   enableTTMLLyric: boolean;
+  /** AMLL TTML DB Server */
+  amllDbServer: string;
   /** 菜单显示封面 */
   menuShowCover: boolean;
   /** 菜单展开项 */

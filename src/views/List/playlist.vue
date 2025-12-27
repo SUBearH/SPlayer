@@ -78,7 +78,6 @@
 
 <script setup lang="ts">
 import type { DropdownOption, MessageReactive } from "naive-ui";
-import { SongType } from "@/types/main";
 import { songDetail } from "@/api/song";
 import {
   playlistDetail,
@@ -89,7 +88,7 @@ import {
 import { formatCoverList, formatSongsList } from "@/utils/format";
 import { renderIcon, copyData } from "@/utils/helper";
 import { isLogin, toLikePlaylist, updateUserLikePlaylist } from "@/utils/auth";
-import { useDataStore, useSettingStore } from "@/stores";
+import { useDataStore } from "@/stores";
 import { openBatchList, openUpdatePlaylist } from "@/utils/modal";
 import { useListDetail } from "@/composables/List/useListDetail";
 import { useListSearch } from "@/composables/List/useListSearch";
@@ -98,18 +97,9 @@ import { useListActions } from "@/composables/List/useListActions";
 
 const router = useRouter();
 const dataStore = useDataStore();
-const statusStore = useStatusStore();
-const settingStore = useSettingStore();
 
-// 歌单数据
-const playlistData = shallowRef<SongType[]>([]);
-const playlistDetailData = ref<CoverType | null>(null);
 // 歌单中的 trackIds 映射表（用于获取歌曲加入时间）- 使用 shallowRef 优化性能
 const trackIdsMap = shallowRef<Map<number, { at: number }>>(new Map());
-
-// 模糊搜索数据
-const searchValue = ref<string>("");
-const searchData = ref<SongType[]>([]);
 
 const {
   detailData,
@@ -275,7 +265,7 @@ const handleLocalPlaylist = (id: number) => {
 const handleOnlinePlaylist = async (id: number, getList: boolean, refresh: boolean) => {
   // 获取歌单详情
   const detail = await playlistDetail(id);
-  playlistDetailData.value = formatCoverList(detail.playlist)[0];
+  setDetailData(formatCoverList(detail.playlist)[0]);
 
   // 性能优化：使用 for 循环代替 map，避免中间数组创建
   if (detail.playlist?.trackIds?.length) {
@@ -290,7 +280,7 @@ const handleOnlinePlaylist = async (id: number, getList: boolean, refresh: boole
     trackIdsMap.value = new Map();
   }
 
-  const count = playlistDetailData.value?.count || 0;
+  const count = detailData.value?.count || 0;
   // 不需要获取列表或无歌曲
   if (!getList || count === 0) {
     setLoading(false);
@@ -300,11 +290,11 @@ const handleOnlinePlaylist = async (id: number, getList: boolean, refresh: boole
   if (isLogin() === 1 && count === detail.privileges?.length && count < 800) {
     const ids = detail.privileges.map((song: any) => song.id as number);
     const result = await songDetail(ids);
-    playlistData.value = formatSongsList(result.songs, trackIdsMap.value);
+    setListData(formatSongsList(result.songs, trackIdsMap.value));
   } else {
     await getPlaylistAllSongs(id, count, refresh);
   }
-  loading.value = false;
+  setLoading(false);
 };
 
 // 获取歌单全部歌曲
@@ -320,16 +310,13 @@ const getPlaylistAllSongs = async (
   // 循环获取
   let offset: number = 0;
   const limit: number = 500;
-  const listDataArray: SongType[] = [];
   do {
     const result = await playlistAllSongs(id, limit, offset);
     const songData = formatSongsList(result.songs, trackIdsMap.value);
-    listData.push(...songData);
-    if (!refresh) playlistData.value = playlistData.value.concat(songData);
+    appendListData(songData);
     // 更新数据
     offset += limit;
   } while (offset < count && isPlaylistPage.value);
-  if (refresh) playlistData.value = listData;
   // 关闭加载
   loadingMsgShow(false);
 };
@@ -348,7 +335,9 @@ const handleTabChange = (value: "songs" | "comments") => {
 // 播放全部歌曲
 const playAllSongs = useDebounceFn(() => {
   if (!detailData.value || !listData.value?.length) return;
-  playAllSongsAction(listData.value, playlistId.value);
+  const listToPlay =
+    searchValue.value && searchData.value?.length ? searchData.value : listData.value;
+  playAllSongsAction(listToPlay, playlistId.value);
 }, 300);
 
 // 加载提示
@@ -363,25 +352,7 @@ const loadingMsgShow = (show: boolean = true, count?: number) => {
   }
 };
 
-// 播放全部歌曲
-const playAllSongs = debounce(() => {
-  if (!playlistDetailData.value || !playlistData.value?.length) return;
-  // 如果有搜索结果，播放搜索结果；否则播放完整列表
-  const listToPlay = searchValue.value && searchData.value?.length ? searchData.value : playlistData.value;
-  player.updatePlayList(listToPlay, undefined, playlistId.value);
-}, 300);
 
-// 模糊搜索
-const listSearch = debounce((val: string) => {
-  val = val.trim();
-  if (!val || val === "") {
-    searchData.value = [];
-    return;
-  }
-  // 获取搜索结果
-  const result = fuzzySearch(val, playlistData.value);
-  searchData.value = result;
-}, 300);
 
 // 删除歌单
 const toDeletePlaylist = async () => {

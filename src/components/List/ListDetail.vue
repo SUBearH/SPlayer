@@ -466,6 +466,19 @@ const handleTabChange = (value: "songs" | "comments") => {
           height: 40px;
           transition: all 0.3s var(--n-bezier);
         }
+        :deep(.loading-indicator) {
+          height: 40px;
+          padding: 0 16px;
+          border-radius: 20px;
+          background-color: var(--n-color-target);
+          border: 2px solid rgba(var(--primary), 0.3);
+          font-size: 14px;
+          order: 1;
+          transition: all 0.3s var(--n-bezier);
+          .text {
+            margin-left: 6px;
+          }
+        }
         .more {
           width: 40px;
         }
@@ -514,6 +527,10 @@ const handleTabChange = (value: "songs" | "comments") => {
             --n-icon-size: 16px;
             --n-tab-font-size: 13px;
             --n-tab-padding: 2px 0;
+          }
+          :deep(.loading-indicator) {
+            height: 32px;
+            font-size: 13px;
           }
         }
       }

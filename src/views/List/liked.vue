@@ -13,7 +13,20 @@
       :more-options="moreOptions"
       @update:search-value="handleSearchUpdate"
       @play-all="playAllSongs"
-    />
+    >
+      <template #action-buttons>
+        <Transition :name="`router-${settingStore.routeAnimation}`">
+          <n-flex
+            v-if="loading && hasInitialCache"
+            align="center"
+            class="loading-indicator"
+          >
+            <n-spin :size="18" />
+            <n-text class="text">正在更新...</n-text>
+          </n-flex>
+        </Transition>
+      </template>
+    </ListDetail>
     <Transition name="fade" mode="out-in">
       <SongList
         v-if="!searchValue || searchData?.length"
@@ -76,15 +89,9 @@ const isActivated = ref<boolean>(false);
 // 在每次成功加载歌单后更新
 let lastSyncedCacheVersion = -1;
 
-// 歌单数据
-const playlistData = shallowRef<SongType[]>([]);
-const playlistDetailData = ref<CoverType | null>(null);
-// trackIds 映射表，用于获取歌曲加入时间
+// 歌单中的 trackIds 映射表（用于获取歌曲加入时间）- 使用 shallowRef 优化性能
 const trackIdsMap = shallowRef<Map<number, { at: number }>>(new Map());
 
-// 模糊搜索数据
-const searchValue = ref<string>("");
-const searchData = ref<SongType[]>([]);
 // 使用 composables
 const { detailData, listData, loading, getSongListHeight, setDetailData, setListData, setLoading } =
   useListDetail();
@@ -102,13 +109,7 @@ const loadingMsg = ref<MessageReactive | null>(null);
 // 是否存在初始缓存（通过检查缓存是否为空来判断，而不是基于 app 启动后第一次加载）
 const hasInitialCache = computed<boolean>(() => getCachedLikedSongs().length > 0);
 
-// 列表是否滚动
-const listScrolling = ref<boolean>(false);
 
-// 列表应该展示数据
-const playlistDataShow = computed(() =>
-  searchValue.value ? searchData.value : playlistData.value,
-);
 
 // 列表高度
 const songListHeight = computed(() => getSongListHeight(listScrolling.value));
@@ -132,10 +133,9 @@ const showLoading = computed(() => listData.value.length === 0 && loading.value)
 
 // 播放按钮文本
 const playButtonText = computed(() => {
-  if (showLoading.value) {
-    const loaded =
-      listData.value.length === (detailData.value?.count || 0) ? 0 : listData.value.length;
-    return `正在更新... (${loaded}/${detailData.value?.count || 0})`;
+  if (loading.value && !hasInitialCache.value) {
+    const loaded = listData.value.length;
+    return `加载中... (${loaded}/${detailData.value?.count || "?"})`;
   }
   return "播放";
 });
@@ -224,17 +224,18 @@ const updatePlaylistUI = (songs: SongType[]) => {
     return song;
   });
 
-  playlistData.value = uniqBy(enrichedSongs, "id");
-  const likedSongIds = playlistData.value.map((song) => song.id);
+  const uniqueSongs = uniqBy(enrichedSongs, "id");
+  setListData(uniqueSongs);
+  const likedSongIds = uniqueSongs.map((song) => song.id);
   dataStore.setUserLikeData("songs", likedSongIds);
-  if (playlistDetailData.value) {
-    dataStore.setLikeSongsList(playlistDetailData.value, playlistData.value);
+  if (detailData.value) {
+    dataStore.setLikeSongsList(detailData.value, uniqueSongs);
   }
 
   // 同步播放器 UI：如果当前播放的歌曲在喜欢列表中，更新其信息
   const musicStore = useMusicStore();
   if (musicStore.playSong?.id) {
-    const updatedSong = playlistData.value.find((s) => s.id === musicStore.playSong.id);
+    const updatedSong = uniqueSongs.find((s) => s.id === musicStore.playSong.id);
     if (updatedSong) {
       // 更新播放器中的歌曲信息（保留当前播放状态，只更新数据）
       Object.assign(musicStore.playSong, updatedSong);
@@ -256,7 +257,7 @@ const getPlaylistDetail = async (
   if (!id) return;
   // 设置加载状态
   setLoading(true);
-  const { getList, refresh } = options;
+  const { getList, refresh, fullUpdate } = options;
   // 清空数据
   clearSearch();
   if (!refresh) resetPlaylistData(getList);
@@ -281,8 +282,9 @@ const getPlaylistData = async (
 ) => {
   // 获取歌单详情
   const detail = await playlistDetail(id);
-  setDetailData(formatCoverList(detail.playlist)[0]);
-  setCachedLikedListDetail(playlistDetailData.value);
+  const cover = formatCoverList(detail.playlist)[0];
+  setDetailData(cover);
+  setCachedLikedListDetail(cover);
 
   // 构建 trackIds 映射表，用于获取歌曲加入时间
   if (detail.playlist?.trackIds?.length) {
@@ -309,13 +311,13 @@ const getPlaylistData = async (
   // ✨ 核心决策逻辑
   if (fullUpdate) {
     // 【分支1】手动全量更新：无条件全量刷新
-    const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
+    const allSongs = await fetchSongsFromServer(detailData.value?.count || 0, detail.privileges);
     incrementUpdateLikedSongs(allSongs, true);
     updatePlaylistUI(getCachedLikedSongs());
     lastSyncedCacheVersion = getCacheVersionRef().value;
   } else if (!hasCachedData) {
     // 【分支2】首次加载（无缓存）：从服务器获取全部并建立缓存
-    const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
+    const allSongs = await fetchSongsFromServer(detailData.value?.count || 0, detail.privileges);
     incrementUpdateLikedSongs(allSongs, true);
     updatePlaylistUI(getCachedLikedSongs());
     lastSyncedCacheVersion = getCacheVersionRef().value;
@@ -323,7 +325,7 @@ const getPlaylistData = async (
     // 【分支3】有缓存：使用 /likelist 返回的 ID 列表对比，避免第三个请求
 
     // 步骤1：检查UI是否与缓存同步
-    if (playlistData.value.length !== cachedSongs.length) {
+    if (listData.value.length !== cachedSongs.length) {
       updatePlaylistUI(cachedSongs);
     }
 
@@ -347,7 +349,7 @@ const getPlaylistData = async (
     // 如果 /likelist 与缓存不一致，需要进行全量更新
     if (!isConsistent) {
       // 需要进行全量更新：获取完整歌曲详情
-      const allSongs = await fetchSongsFromServer(playlistDetailData.value.count || 0, detail.privileges);
+      const allSongs = await fetchSongsFromServer(detailData.value?.count || 0, detail.privileges);
       incrementUpdateLikedSongs(allSongs, true);
       updatePlaylistUI(getCachedLikedSongs());
     }
@@ -388,27 +390,10 @@ const handleSearchUpdate = (val: string) => {
 // 播放全部歌曲
 const playAllSongs = useDebounceFn(() => {
   if (!detailData.value || !listData.value?.length) return;
-  playAllSongsAction(listData.value, playlistId.value);
+  const listToPlay =
+    searchValue.value && searchData.value?.length ? searchData.value : listData.value;
+  playAllSongsAction(listToPlay, playlistId.value);
 }, 300);
-
-// 模糊搜索
-const listSearch = debounce((val: string) => {
-  val = val.trim();
-  if (!val || val === "") {
-    searchData.value = [];
-    return;
-  }
-  // 获取搜索结果
-  const result = fuzzySearch(val, playlistData.value);
-  searchData.value = result;
-}, 300);
-// 处理标签点击
-const handleTagClick = (tag: string) => {
-  router.push({
-    name: "discover-playlists",
-    query: { cat: tag },
-  });
-};
 
 // 加载提示（已禁用）
 const loadingMsgShow = (show: boolean = true) => {
@@ -421,13 +406,13 @@ const loadingMsgShow = (show: boolean = true) => {
 
 // 删除指定歌曲（实际上是取消喜欢）
 const removeSong = (ids: number[]) => {
-  if (!playlistData.value) return;
+  if (!listData.value) return;
 
   // 对于"我喜欢的音乐"，删除歌曲 = 取消喜欢
   // 需要通过 API 实际删除而不是只删除本地 UI
   ids.forEach((id) => {
     // 查找对应的歌曲对象
-    const song = playlistData.value.find((s) => s.id === id);
+    const song = listData.value.find((s) => s.id === id);
     if (song) {
       // 调用 toLikeSong 来取消喜欢（这会更新 dataStore 和缓存）
       toLikeSong(song, false);
@@ -435,15 +420,15 @@ const removeSong = (ids: number[]) => {
   });
 
   // 从 UI 列表中立即删除（不等待 API 响应）
-  playlistData.value = playlistData.value.filter((song) => !ids.includes(song.id));
+  setListData(listData.value.filter((song) => !ids.includes(song.id)));
 
   // 更新歌单详情中的歌曲数量
-  if (playlistDetailData.value) {
-    playlistDetailData.value.count = Math.max(0, (playlistDetailData.value.count || 0) - ids.length);
+  if (detailData.value) {
+    detailData.value.count = Math.max(0, (detailData.value.count || 0) - ids.length);
   }
 
   // 同步更新全局状态中的数据
-  updatePlaylistUI(playlistData.value);
+  updatePlaylistUI(listData.value);
 };
 
 onActivated(() => {
@@ -552,3 +537,5 @@ onMounted(async () => {
   }
 });
 </script>
+
+

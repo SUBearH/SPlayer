@@ -96,6 +96,7 @@ const { playAllSongs: playAllSongsAction } = useListActions();
 // 电台 ID
 const oldRadioId = ref<number>(0);
 const radioId = computed<number>(() => Number(router.currentRoute.value.query.id as string));
+const currentRequestId = ref<number>(0);
 
 // 加载提示
 const loadingMsg = ref<MessageReactive | null>(null);
@@ -180,6 +181,7 @@ const moreOptions = computed<DropdownOption[]>(() => [
 // 获取播客基础信息
 const getRadioDetail = async (id: number) => {
   if (!id) return;
+  currentRequestId.value = id;
   // 设置加载状态
   setLoading(true);
   // 清空数据
@@ -228,7 +230,9 @@ const handleTabChange = (value: "songs" | "comments") => {
 // 播放全部歌曲
 const playAllSongs = useDebounceFn(() => {
   if (!detailData.value || !listData.value?.length) return;
-  playAllSongsAction(listData.value, radioId.value);
+  const listToPlay =
+    searchValue.value && searchData.value?.length ? searchData.value : listData.value;
+  playAllSongsAction(listToPlay, radioId.value);
 }, 300);
 
 // 加载提示

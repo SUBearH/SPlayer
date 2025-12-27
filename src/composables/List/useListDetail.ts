@@ -15,7 +15,8 @@ export const useListDetail = () => {
    * 计算列表高度
    */
   const getSongListHeight = (listScrolling: boolean) => {
-    return statusStore.mainContentHeight - (listScrolling ? 120 : 240);
+    const height = statusStore.mainContentHeight - (listScrolling ? 120 : 240);
+    return height > 0 ? height : 0;
   };
 
   /**

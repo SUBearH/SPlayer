@@ -187,7 +187,9 @@ const handleTabChange = (value: "songs" | "comments") => {
 // 播放全部歌曲
 const playAllSongs = useDebounceFn(() => {
   if (!detailData.value || !listData.value?.length) return;
-  playAllSongsAction(listData.value);
+  const listToPlay =
+    searchValue.value && searchData.value?.length ? searchData.value : listData.value;
+  playAllSongsAction(listToPlay);
 }, 300);
 
 onBeforeRouteUpdate((to) => {

@@ -8,7 +8,9 @@ export const useListScroll = () => {
    * 处理列表滚动
    */
   const handleListScroll = (e: Event) => {
-    const scrollTop = (e.target as HTMLElement).scrollTop;
+    const target = e.target as HTMLElement;
+    if (!target) return;
+    const scrollTop = target.scrollTop;
     listScrolling.value = scrollTop > 10;
   };
 
